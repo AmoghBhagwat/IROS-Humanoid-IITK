@@ -23,6 +23,7 @@ import os
 
 # Load the YOLOv5 model
 path = os.getcwd()
+os.system('ls -al')
 model = torch.hub.load('./participant/yolov5/', 'custom', path='./participant/recent.pt', source='local')
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model.to(device).eval()
