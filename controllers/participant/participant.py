@@ -19,9 +19,11 @@ from torchvision import transforms
 import numpy as np
 import time
 import threading
+import os
 
 # Load the YOLOv5 model
-model = torch.hub.load('ultralytics/yolov5', 'custom', path='/home/amogh/IROS_2023/IROS/controllers/participant/recent.pt')
+path = os.getcwd()
+model = torch.hub.load(path + '/yolov5/', 'custom', path=path+'/recent.pt')
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model.to(device).eval()
 
