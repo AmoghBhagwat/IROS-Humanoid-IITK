@@ -11,7 +11,19 @@ RUN pip3 install --upgrade pip && \
     torchvision \
     ahrs \
     scipy \ 
-    pandas
+    gitpython \
+    matplotlib \
+    numpy \
+    Pillow \
+    psutil \
+    PyYAML \
+    requests \
+    thop \ 
+    tqdm \
+    ultralytics \
+    pandas \
+    seaborn \
+    setuptools
 
 # Environment variables needed for Webots
 # https://cyberbotics.com/doc/guide/running-extern-robot-controllers#remote-extern-controllers
