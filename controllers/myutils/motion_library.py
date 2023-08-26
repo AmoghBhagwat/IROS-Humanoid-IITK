@@ -20,7 +20,7 @@ class MotionLibrary:
     def __init__(self):
         """Initializes the motion library with the motions in the motions folder."""
         self.motions = {}
-        motion_dir = '/home/amogh/IROS_2023/IROS/controllers/motions'
+        motion_dir = '../motions'
         for motion_file in os.listdir(motion_dir):
             motion_path = os.path.join(motion_dir, motion_file)
             motion_name, ext = os.path.splitext(motion_file)
