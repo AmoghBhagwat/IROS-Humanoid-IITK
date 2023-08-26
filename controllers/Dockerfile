@@ -10,7 +10,8 @@ RUN pip3 install --upgrade pip && \
     torch \
     torchvision \
     ahrs \
-    scipy
+    scipy \ 
+    pandas
 
 # Environment variables needed for Webots
 # https://cyberbotics.com/doc/guide/running-extern-robot-controllers#remote-extern-controllers
