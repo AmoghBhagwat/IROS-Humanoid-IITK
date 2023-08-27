@@ -57,7 +57,7 @@ class Sultaan (Robot):
         
         self.HeadPitch = self.getDevice("HeadPitch")
        
-        self.previousPosition = 0
+        self.previousPosition = 0.5
         self.is_bot_visible = True
 
         #self.library.play('Cust')
@@ -235,7 +235,8 @@ class Sultaan (Robot):
         desired_radius = (self.SMALLEST_TURNING_RADIUS / normalized_x) if abs(normalized_x) > 1e-3 else None
         
         if (self.is_bot_visible == False):
-            self.heading_angle = -self.previousPosition * (3.14 / 3)
+            print("not visible")
+            self.heading_angle = -abs(self.previousPosition) * (3.14 / 3)
             self.counter = 0
             self.gait_manager.command_to_motors(desired_radius=desired_radius, heading_angle=self.heading_angle)
             return  
