@@ -19,11 +19,8 @@ from torchvision import transforms
 import numpy as np
 import time
 import threading
-import os
 
 # Load the YOLOv5 model
-path = os.getcwd()
-os.system('ls -al')
 model = torch.hub.load('yolov5/', 'custom', path='recent.pt', source='local')
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model.to(device).eval()
@@ -87,11 +84,11 @@ class Sultaan (Robot):
             
             if(self.fall_detector.detect_fall()): 
                 self.fall = True
-            # if 0.3 < t < 5:
-            #     self.start_sequence()
-            # elif t > 5:
-            else:
-                self.fall
+            if 0.3 < t < 5:
+                self.start_sequence()
+            elif t > 5:
+            # else:
+                # self.fall
                 self.fall_detector.check()
                 
                 if(not self.fall):
