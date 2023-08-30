@@ -46,7 +46,7 @@ class Sultaan (Robot):
         self.gait_manager = GaitManager(self, self.time_step)
         self.heading_angle = 3.14 / 2
         self.counter = 0
-        #self.library.add('Anglehandupdown', './First.motion', loop = True)
+        self.library.add('Shove', './Shove.motion', loop = True)
         self.leds = {
             'rightf': self.getDevice('Face/Led/Right'), 
             'leftf': self.getDevice('Face/Led/Left'), 
@@ -59,6 +59,7 @@ class Sultaan (Robot):
        
         self.previousPosition = 0.5
         self.is_bot_visible = True
+        self.area = 0
 
         #self.library.play('Cust')
         # for locking motor
@@ -92,18 +93,16 @@ class Sultaan (Robot):
                 self.fall_detector.check()
                 
                 if(not self.fall):
-                    #print('t_before_yolo: {:.6f}'.format(round(t, 6)))
-                    
-                    # self.walk()
                     d = self.getDistance()
                     if d == 1:
                         print("boundary overflow")
-                    #prevD = d
-                    # self.heading_angle = 3.14 / 2
                         self.library.play('TurnLeft60')
                     else:
-                        # self.run_yolo()
-                        self.walk()
+                        print(f"area = {self.area}")
+                        if (self.area < 0.55):
+                            self.walk()
+                        else: # attack opponent
+                            self.library.play('Shove')
 
     
     def getDistance(self):          #we use bottom oriented image for edge detection
@@ -198,7 +197,6 @@ class Sultaan (Robot):
             results = model([img])
 
             # Display the detections
-            results.print()
 
             # Access individual detection attributes (e.g., bounding boxes, labels)
             boxes = results.xyxy[0]#.numpy()
@@ -215,9 +213,11 @@ class Sultaan (Robot):
             if self.is_bot_visible:
                 # print("Box: " + str(boxes))
                 # print("x = " + str((boxes[0][0].item()-80) / 80))
-                
-                self.previousPosition = (boxes[0][0].item()-80)/80
 
+                x_size = boxes[0][2].item() - boxes[0][0].item()
+                y_size = boxes[0][3].item() - boxes[0][1].item()
+                self.area = x_size * y_size / (120*160)
+                self.previousPosition = ((boxes[0][2].item()+boxes[0][0].item())/2-80)/80
 
             # Sleep for a short duration to avoid excessive CPU usage
             time.sleep(0.1)
