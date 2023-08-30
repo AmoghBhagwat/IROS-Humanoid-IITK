@@ -99,7 +99,7 @@ class Sultaan (Robot):
                         self.library.play('TurnLeft60')
                     else:
                         print(f"area = {self.area}")
-                        if (self.area < 0.55):
+                        if (self.area < 0.55 or self.is_bot_visible == False):
                             self.walk()
                         else: # attack opponent
                             self.library.play('Shove')
