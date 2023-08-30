@@ -94,16 +94,16 @@ class Sultaan (Robot):
                 if(not self.fall):
                     #print('t_before_yolo: {:.6f}'.format(round(t, 6)))
                     
-                    self.walk()
+                    # self.walk()
                     d = self.getDistance()
                     if d == 1:
-                    # print("boundary overflow")
+                        print("boundary overflow")
                     #prevD = d
                     # self.heading_angle = 3.14 / 2
                         self.library.play('TurnLeft60')
                     else:
-                        self.run_yolo()
-                        # self.walk()
+                        # self.run_yolo()
+                        self.walk()
 
     
     def getDistance(self):          #we use bottom oriented image for edge detection
@@ -184,42 +184,43 @@ class Sultaan (Robot):
         time.sleep(2)
         # while True:
         # Capture the image from the camera
-        image = self.camera.get_image()
+        while True:
+            image = self.camera.get_image()
 
-        # Remove alpha channel if present
-        if image.shape[2] == 4:
-            image = image[:, :, :3]
+            # Remove alpha channel if present
+            if image.shape[2] == 4:
+                image = image[:, :, :3]
 
-        # Convert image to RGB format
-        img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            # Convert image to RGB format
+            img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-        # Perform object detection
-        results = model([img])
+            # Perform object detection
+            results = model([img])
 
-        # Display the detections
-        results.print()
+            # Display the detections
+            results.print()
 
-        # Access individual detection attributes (e.g., bounding boxes, labels)
-        boxes = results.xyxy[0]#.numpy()
-        # labels = results.names[0]
+            # Access individual detection attributes (e.g., bounding boxes, labels)
+            boxes = results.xyxy[0]#.numpy()
+            # labels = results.names[0]
 
-        # Process the detection results as needed
-        if len(boxes) == 0:
-            self.is_bot_visible = False
-        #    self.library.play('TurnLeft60')
-        else:
-            self.is_bot_visible = True
-            
-        # print("Bot visible: " + str(self.is_bot_visible))
-        if self.is_bot_visible:
-            # print("Box: " + str(boxes))
-            # print("x = " + str((boxes[0][0].item()-80) / 80))
-            
-            self.previousPosition = (boxes[0][0].item()-80)/80
+            # Process the detection results as needed
+            if len(boxes) == 0:
+                self.is_bot_visible = False
+            #    self.library.play('TurnLeft60')
+            else:
+                self.is_bot_visible = True
+                
+            # print("Bot visible: " + str(self.is_bot_visible))
+            if self.is_bot_visible:
+                # print("Box: " + str(boxes))
+                # print("x = " + str((boxes[0][0].item()-80) / 80))
+                
+                self.previousPosition = (boxes[0][0].item()-80)/80
 
 
-        # Sleep for a short duration to avoid excessive CPU usage
-        time.sleep(0.1)
+            # Sleep for a short duration to avoid excessive CPU usage
+            time.sleep(0.1)
     
     
     
