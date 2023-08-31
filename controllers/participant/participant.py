@@ -46,7 +46,7 @@ class Sultaan (Robot):
         self.gait_manager = GaitManager(self, self.time_step)
         self.heading_angle = 3.14 / 2
         self.counter = 0
-        self.library.add('Shove', './Shove.motion', loop = True)
+        self.library.add('Shove', './Shove.motion', loop = False)
         self.leds = {
             'rightf': self.getDevice('Face/Led/Right'), 
             'leftf': self.getDevice('Face/Led/Left'), 
@@ -99,10 +99,14 @@ class Sultaan (Robot):
                         self.library.play('TurnLeft60')
                     else:
                         print(f"area = {self.area}")
-                        if (self.area < 0.45 or self.is_bot_visible == False):
-                            self.walk()
-                        else: # attack opponent
+                        if (self.area > 0.48):
                             self.library.play('Shove')
+                        else:
+                            self.walk()
+                        # if (self.area < 0.45 or self.is_bot_visible == False):
+                        #     self.walk()
+                        # else: # attack opponent
+                        #     self.library.play('Shove')
 
     
     def getDistance(self):          #we use bottom oriented image for edge detection
