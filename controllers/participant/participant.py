@@ -20,6 +20,9 @@ import numpy as np
 import time
 import threading
 
+model = torch.hub.load('yolov5/', 'custom', path='recent.pt', source='local')
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+model.to(device).eval()
 
 class Sultaan (Robot):
     SMALLEST_TURNING_RADIUS = 0.1 #0.1
@@ -166,9 +169,6 @@ class Sultaan (Robot):
     
     def run_yolo(self):
         # Load the YOLOv5 model
-        model = torch.hub.load('yolov5/', 'custom', path='recent.pt', source='local')
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        model.to(device).eval()
         
         time.sleep(2)
         # while True:
