@@ -20,10 +20,6 @@ import numpy as np
 import time
 import threading
 
-# Load the YOLOv5 model
-model = torch.hub.load('yolov5/', 'custom', path='recent.pt', source='local')
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model.to(device).eval()
 
 class Sultaan (Robot):
     SMALLEST_TURNING_RADIUS = 0.1 #0.1
@@ -100,6 +96,7 @@ class Sultaan (Robot):
                     else:
                         print(f"area = {self.area}")
                         if (self.area > 0.48):
+                            print(f"area = {self.area}, shoving")
                             self.library.play('Shove')
                         else:
                             self.walk()
@@ -137,13 +134,6 @@ class Sultaan (Robot):
 
 # Get the number of channels from the shape tuple
         num_channels = rgb_image_shape[-1]
-        print('num_channels:', num_channels)
-        
-        
-        
-        
-        
-        
         
         if len(contours) > 0:
             largest_contour = max(contours, key=cv2.contourArea)
@@ -167,23 +157,19 @@ class Sultaan (Robot):
             cv2.drawContours(image, [box], 0, (0, 255, 0), 2)
             print('percentage_below_threshold: ', percentage_below_threshold)
             if percentage_below_threshold >= 0.5:    #print('point[1]: ', point)
-                #print('bottom_threshold: ', bottom_threshold)
                 if cv2.contourArea(largest_contour) >= 200:
-                    print("Turn to avoid falling!")
                     
                     m=1
-                
-                else:
-                    print("No need to turn, keep moving.")
-            else:
-                print("No need to turn, keep moving.")
-        else:
-            print("No red contours found, keep moving.")
         return m
 
     
     
     def run_yolo(self):
+        # Load the YOLOv5 model
+        model = torch.hub.load('yolov5/', 'custom', path='recent.pt', source='local')
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        model.to(device).eval()
+        
         time.sleep(2)
         # while True:
         # Capture the image from the camera
@@ -256,7 +242,7 @@ class Sultaan (Robot):
             self.heading_angle = 0
             self.counter = 0
         self.counter += 1
-        print(f"turning with radius {desired_radius}, angle {self.heading_angle}")
+        # print(f"turning with radius {desired_radius}, angle {self.heading_angle}")
         self.gait_manager.command_to_motors(desired_radius=desired_radius, heading_angle=self.heading_angle)
         #self.library.play('Khushi')
 
