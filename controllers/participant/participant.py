@@ -20,17 +20,12 @@ import numpy as np
 import time
 import threading
 
-model = torch.hub.load('yolov5/', 'custom', path='recent.pt', source='local')
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model.to(device).eval()
-
 class Sultaan (Robot):
     SMALLEST_TURNING_RADIUS = 0.1 #0.1
     SAFE_ZONE = 0.75
     TIME_BEFORE_DIRECTION_CHANGE = 60   # 80
     k=0
     is_bot_visible = True
-    
     
     def __init__(self):
         Robot.__init__(self)
@@ -60,12 +55,12 @@ class Sultaan (Robot):
         self.is_bot_visible = True
         self.area = 0
 
+        self.model_loaded = False
         #self.library.play('Cust')
         # for locking motor
        
     def run(self):
         k=0
-        
         
         yolo_thread = threading.Thread(target=self.run_yolo)
         yolo_thread.start()
@@ -97,6 +92,10 @@ class Sultaan (Robot):
                         print("boundary overflow")
                         self.library.play('TurnLeft60')
                     else:
+                        if (self.model_loaded == False):
+                            self.walk()
+                            return
+                        
                         print(f"area = {self.area}")
                         if (self.area > 0.48):
                             print(f"area = {self.area}, shoving")
@@ -169,6 +168,10 @@ class Sultaan (Robot):
     
     def run_yolo(self):
         # Load the YOLOv5 model
+        model = torch.hub.load('yolov5/', 'custom', path='recent.pt', source='local')
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        model.to(device).eval()
+        self.model_loaded = True
         
         time.sleep(2)
         # while True:
@@ -229,7 +232,7 @@ class Sultaan (Robot):
             print("not visible")
             self.heading_angle = -abs(self.previousPosition) * (3.14 / 3)
             self.counter = 0
-            self.gait_manager.command_to_motors(desired_radius=desired_radius, heading_angle=self.heading_angle)
+            self.gait_manager.command_to_motors(desired_radius=desired_radius/2, heading_angle=self.heading_angle)
             return  
         
         if(normalized_x > 0.7): 
@@ -243,7 +246,7 @@ class Sultaan (Robot):
             self.counter = 0
         self.counter += 1
         # print(f"turning with radius {desired_radius}, angle {self.heading_angle}")
-        self.gait_manager.command_to_motors(desired_radius=desired_radius, heading_angle=self.heading_angle)
+        self.gait_manager.command_to_motors(desired_radius=desired_radius/2, heading_angle=self.heading_angle)
         #self.library.play('Khushi')
 
     def _get_normalized_opponent_x(self):
