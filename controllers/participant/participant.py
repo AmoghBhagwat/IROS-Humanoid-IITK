@@ -41,6 +41,7 @@ class Sultaan (Robot):
         self.heading_angle = 3.14 / 2
         self.counter = 0
         self.library.add('Shove', './Shove.motion', loop = False)
+        self.library.add('Punch', './Punch.motion', loop = False)
         self.leds = {
             'rightf': self.getDevice('Face/Led/Right'), 
             'leftf': self.getDevice('Face/Led/Left'), 
@@ -99,7 +100,7 @@ class Sultaan (Robot):
                         print(f"area = {self.area}")
                         if (self.area > 0.48):
                             print(f"area = {self.area}, shoving")
-                            self.library.play('Shove')
+                            self.library.play('Punch')
                         else:
                             self.walk()
                         # if (self.area < 0.45 or self.is_bot_visible == False):
