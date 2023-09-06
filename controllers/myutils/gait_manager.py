@@ -41,6 +41,9 @@ class GaitManager():
     def update_theta(self):
         self.gait_generator.update_theta()
 
+    def update_radius_calibration(self, radius_calibration):
+        self.gait_generator.update_radius_calibration(radius_calibration)
+
     def command_to_motors(self, desired_radius=None, heading_angle=0):
         """
         Compute the desired positions of the robot's legs for a desired radius (R > 0 is a right turn)

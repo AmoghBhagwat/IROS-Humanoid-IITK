@@ -20,7 +20,7 @@ from controller import Robot, Motion
 
 class Wrestler (Robot):
     def run(self):
-        motion = Motion('../motions/HandWave.motion')  # look into this text file, it's easy to understand
+        motion = Motion('../motions/TaiChi.motion')  # look into this text file, it's easy to understand
         motion.setLoop(True)
         motion.play()
         time_step = int(self.getBasicTimeStep())  # retrieves the WorldInfo.basicTimeTime (ms) from the world file

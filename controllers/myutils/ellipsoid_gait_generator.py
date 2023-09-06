@@ -55,6 +55,9 @@ class EllipsoidGaitGenerator():
         # turning radii are bigger than desired in simulation so we multiply by this factor:
         self.radius_calibration = 0.93
 
+    def set_radius_calibration(self, radius_calibration):
+        self.radius_calibration = radius_calibration
+
     def update_theta(self):
         '''Update the angle of the ellipsoid path and clip it to [-pi, pi]'''
         self.theta = -(2 * np.pi * self.robot.getTime() / self.step_period) % (2 * np.pi) - np.pi

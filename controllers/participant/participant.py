@@ -103,11 +103,6 @@ class Sultaan (Robot):
                             self.library.play('Punch')
                         else:
                             self.walk()
-                        # if (self.area < 0.45 or self.is_bot_visible == False):
-                        #     self.walk()
-                        # else: # attack opponent
-                        #     self.library.play('Shove')
-
     
     def getDistance(self):          #we use bottom oriented image for edge detection
         import cv2
@@ -236,15 +231,19 @@ class Sultaan (Robot):
             self.gait_manager.command_to_motors(desired_radius=desired_radius/2, heading_angle=self.heading_angle)
             return  
         
-        if(normalized_x > 0.7): 
-            self.heading_angle = 3.14/4
-            self.counter = 0;  
-        elif(normalized_x < -0.7): 
-            self.heading_angle = -(3.14/4)
-            self.counter = 0
+        # if(normalized_x > 0.7): 
+        #     self.heading_angle = 3.14/4
+        #     self.counter = 0;  
+        # elif(normalized_x < -0.7): 
+        #     self.heading_angle = -(3.14/4)
+        #     self.counter = 0
+        # else:
+        #     self.heading_angle = 0
+        #     self.counter = 0
+        if (abs(normalized_x) > 0.5):
+            self.gait_manager.update_radius_calibration(0)
         else:
-            self.heading_angle = 0
-            self.counter = 0
+            self.gait_manager.update_radius_calibration(0.93)
         self.counter += 1
         # print(f"turning with radius {desired_radius}, angle {self.heading_angle}")
         self.gait_manager.command_to_motors(desired_radius=desired_radius/2, heading_angle=self.heading_angle)
