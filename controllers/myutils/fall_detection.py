@@ -87,7 +87,7 @@ class FallDetection:
         self.fsm.transition_to('BLOCKING_MOTION')
 
     def back_fall(self):
-        self.current_motion.set(self.library.get('GetUpBack'))
+        self.current_motion.set(self.library.get('Abhishek'))
         self.fsm.transition_to('BLOCKING_MOTION')
 
     def wait(self):

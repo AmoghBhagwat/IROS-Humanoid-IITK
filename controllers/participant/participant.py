@@ -174,7 +174,7 @@ class Sultaan (Robot):
         x_size = boxes[0][2].item() - boxes[0][0].item()
         y_size = boxes[0][3].item() - boxes[0][1].item()
         area = x_size * y_size
-        triangulation = Triangulation(20, 20, area) # TODO: update known values
+        triangulation = Triangulation(2.0, 0.5, area)
         # while True:
         # Capture the image from the camera
         while True:
