@@ -97,9 +97,9 @@ class Sultaan (Robot):
                             self.walk()
                             return
                         
-                        print(f"area = {self.area}")
-                        if (self.area > 0.48):
-                            print(f"area = {self.area}, shoving")
+                        # print(f"area = {self.area}")
+                        if (self.area > 0.2):
+                            # print(f"area = {self.area}, shoving")
                             self.library.play('Punch')
                         else:
                             self.walk()
@@ -217,8 +217,6 @@ class Sultaan (Robot):
                 self.area = x_size * y_size / (120*160)
                 self.previousPosition = ((boxes[0][2].item()+boxes[0][0].item())/2-80)/80
 
-                print(f"distance = {triangulation.distance_to_camera(self.area*120*160)}")
-
             # Sleep for a short duration to avoid excessive CPU usage
             time.sleep(0.1)
     
@@ -236,7 +234,7 @@ class Sultaan (Robot):
         desired_radius = (self.SMALLEST_TURNING_RADIUS / normalized_x) if abs(normalized_x) > 1e-3 else None
         
         if (self.is_bot_visible == False):
-            print("not visible")
+            # print("not visible")
             self.heading_angle = -abs(self.previousPosition) * (3.14 / 3)
             self.counter = 0
             self.gait_manager.command_to_motors(desired_radius=desired_radius/2, heading_angle=self.heading_angle)
