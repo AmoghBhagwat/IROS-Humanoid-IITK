@@ -11,7 +11,7 @@ from myutils.camera import Camera
 from myutils.camera2 import Camera2
 from myutils.finite_state_machine import FiniteStateMachine
 from myutils.ellipsoid_gait_generator import EllipsoidGaitGenerator
-
+from myutils.triangulation import Triangulation
 
 import torch
 import cv2
@@ -169,7 +169,12 @@ class Sultaan (Robot):
         model.to(device).eval()
         self.model_loaded = True
         
-        time.sleep(2)
+        reference_image = cv2.cvtColor(self.camera.get_image(), cv2.COLOR_BGR2RGB)
+        boxes = model([reference_image]).xyxy[0]
+        x_size = boxes[0][2].item() - boxes[0][0].item()
+        y_size = boxes[0][3].item() - boxes[0][1].item()
+        area = x_size * y_size
+        triangulation = Triangulation(20, 20, area) # TODO: update known values
         # while True:
         # Capture the image from the camera
         while True:
@@ -207,6 +212,8 @@ class Sultaan (Robot):
                 y_size = boxes[0][3].item() - boxes[0][1].item()
                 self.area = x_size * y_size / (120*160)
                 self.previousPosition = ((boxes[0][2].item()+boxes[0][0].item())/2-80)/80
+
+                print(f"distance = {triangulation.distance_to_camera(self.area*120*160)}")
 
             # Sleep for a short duration to avoid excessive CPU usage
             time.sleep(0.1)
