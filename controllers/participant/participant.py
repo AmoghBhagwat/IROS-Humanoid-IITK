@@ -171,6 +171,10 @@ class Sultaan (Robot):
         
         reference_image = cv2.cvtColor(self.camera.get_image(), cv2.COLOR_BGR2RGB)
         boxes = model([reference_image]).xyxy[0]
+
+        while (len(boxes) == 0):
+            boxes = model([reference_image]).xyxy[0]
+        
         x_size = boxes[0][2].item() - boxes[0][0].item()
         y_size = boxes[0][3].item() - boxes[0][1].item()
         area = x_size * y_size
