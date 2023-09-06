@@ -42,7 +42,7 @@ class GaitManager():
         self.gait_generator.update_theta()
 
     def update_radius_calibration(self, radius_calibration):
-        self.gait_generator.update_radius_calibration(radius_calibration)
+        self.gait_generator.set_radius_calibration(radius_calibration)
 
     def command_to_motors(self, desired_radius=None, heading_angle=0):
         """
