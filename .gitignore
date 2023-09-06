@@ -1,3 +1,4 @@
 .vscode
 *.pyc
 .flake8
+controllers/myutils/__pycache__/
