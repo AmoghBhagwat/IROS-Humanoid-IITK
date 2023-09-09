@@ -29,7 +29,12 @@ class Sultaan (Robot):
         Robot.__init__(self)
         self.time_step = int(self.getBasicTimeStep())
 
+        self.library = MotionLibrary()
+        self.library.add('Shove', './Shove.motion', loop = False)
+        self.library.add('Punch', './Punch.motion', loop = False)
+
         self.camera = Camera(self)
+        self.camera2 = Camera2(self)
         self.fall_detector = FallDetection(self.time_step, self)
         self.gait_manager = GaitManager(self, self.time_step)
         self.heading_angle = 3.14 / 2
@@ -58,17 +63,58 @@ class Sultaan (Robot):
             self.leds['lefte'].set(0xff0000)
             self.leds['chest'].set(0xff0000)
 
+            self.fall = self.fall_detector.detect_fall()
+
             t = self.getTime()
             self.gait_manager.update_theta()
             if 0.3 < t < 2:
                 self.start_sequence()
             elif t > 2:
                 self.fall_detector.check()
+
+                if (self.fall): # equivalent to if not self.fall
+                    return
+                
+                if self.near_edge():
+                    return # TODO
+
+                if self.area > 0.5: # TODO find ideal threshold
+                    self.library.play('Punch')
+                    return
+                
                 self.walk()
+                
 
     def start_sequence(self):
         """At the beginning of the match, the robot walks forwards to move away from the edges."""
         self.gait_manager.command_to_motors(heading_angle=0)
+
+    def near_edge(self):
+        image = self.camera2.get_image()
+        hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        lower_red = (0, 50, 50)
+        upper_red = (10, 255, 255)
+        mask = cv2.inRange(hsv_image, lower_red, upper_red)
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5,5))
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        if (len(contours) > 0):
+            largest_contour = max(contours, key=cv2.contourArea)
+            rect = cv2.minAreaRect(largest_contour)
+            box = cv2.boxPoints(rect)
+            box = np.intp(box)
+
+            width, height = image.shape[:2]
+            bottom_threshold = 0.92 * height
+
+            points_below_threshold = sum(point[1] >= bottom_threshold for point in box)
+            percentage_below_threshold = points_below_threshold / len(box)
+
+            if percentage_below_threshold >= 0.5 and cv2.contourArea(largest_contour) >= 0.5:
+                return True
+            
+        return False
 
     def walk(self):
         if (self.botVisible == False):
@@ -81,10 +127,20 @@ class Sultaan (Robot):
         normalized_x = self._get_normalized_opponent_x()
         
         desired_radius = abs(self.SMALLEST_TURNING_RADIUS / normalized_x) if abs(normalized_x) > 1e-3 else None
-        
-        rotate_right = 0 # TODO 
-        self.gait_manager.command_to_motors(desired_radius=desired_radius, heading_angle=self.heading_angle, rotate_right=rotate_right)
 
+        rotate_right = 0
+        if normalized_x > 0:
+            rotate_right = 1
+        else:
+            rotate_right = -1
+
+        if (abs(normalized_x) > 0.7):
+            self.gait_manager.update_radius_calibration(0)
+        else:
+            self.gait_manager.update_radius_calibration(0.93)
+            rotate_right = 1
+
+        self.gait_manager.command_to_motors(desired_radius=desired_radius, heading_angle=self.heading_angle, rotate_right=rotate_right)
 
 
     def _get_normalized_opponent_x(self):
