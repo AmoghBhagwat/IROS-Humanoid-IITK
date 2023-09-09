@@ -44,7 +44,7 @@ class GaitManager():
     def update_radius_calibration(self, radius_calibration):
         self.gait_generator.set_radius_calibration(radius_calibration)
 
-    def command_to_motors(self, desired_radius=None, heading_angle=0):
+    def command_to_motors(self, desired_radius=None, heading_angle=0, rotate_right=-1):
         """
         Compute the desired positions of the robot's legs for a desired radius (R > 0 is a right turn)
         and a desired heading angle (in radians. 0 is straight on, > 0 is turning left).
@@ -53,13 +53,13 @@ class GaitManager():
         if not desired_radius:
             desired_radius = 1e3
         x, y, z, yaw = self.gait_generator.compute_leg_position(
-            is_left=False, desired_radius=desired_radius, heading_angle=heading_angle)
+            is_left=False, desired_radius=desired_radius, heading_angle=heading_angle, rotate_right=rotate_right)
         right_target_commands = self.kinematics.inverse_leg(x * 1e3, y * 1e3, z * 1e3, 0, 0, yaw, is_left=False)
         for command, motor in zip(right_target_commands, self.R_leg_motors):
             motor.setPosition(command)
 
         x, y, z, yaw = self.gait_generator.compute_leg_position(
-            is_left=True, desired_radius=desired_radius, heading_angle=heading_angle)
+            is_left=True, desired_radius=desired_radius, heading_angle=heading_angle, rotate_right=rotate_right)
         left_target_commands = self.kinematics.inverse_leg(x * 1e3, y * 1e3, z * 1e3, 0, 0, yaw, is_left=True)
         for command, motor in zip(left_target_commands, self.L_leg_motors):
             motor.setPosition(command)

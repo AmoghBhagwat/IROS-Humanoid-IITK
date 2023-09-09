@@ -62,21 +62,21 @@ class EllipsoidGaitGenerator():
         '''Update the angle of the ellipsoid path and clip it to [-pi, pi]'''
         self.theta = -(2 * np.pi * self.robot.getTime() / self.step_period) % (2 * np.pi) - np.pi
 
-    def compute_leg_position(self, is_left, desired_radius=1e3, heading_angle=0):
+    def compute_leg_position(self, is_left, desired_radius=1e3, heading_angle=0, rotate_right=-1):
         '''Compute the desired positions of a leg for a desired radius (R > 0 is a right turn).'''
         factor = -1 if is_left else 1  # the math is the same for both legs, except for some signs
         desired_radius *= self.radius_calibration
         if abs(desired_radius) > 0.1:
             amplitude_x = self.adapt_step_length(heading_angle) \
-                * (desired_radius - factor * self.lateral_leg_offset) / desired_radius
+                * (desired_radius * rotate_right - factor * self.lateral_leg_offset) / desired_radius * rotate_right
             x = factor * amplitude_x * np.cos(self.theta)
-            yaw = - x / (desired_radius - factor * self.lateral_leg_offset)
-            y = - (1 - np.cos(yaw)) * (desired_radius - factor * self.lateral_leg_offset)
+            yaw = - x / (desired_radius * rotate_right - factor * self.lateral_leg_offset)
+            y = - (1 - np.cos(yaw)) * (desired_radius * rotate_right - factor * self.lateral_leg_offset)
             if heading_angle != 0:
                 x, y = self.rotate(x, y, heading_angle)
         else:
             # if the desired radius is too small for the previous calculations, rotate in place
-            rotate_right = -1 if desired_radius > 0 else 1
+            # rotate_right = -1 if desired_radius > 0 else 1
             turning_radius = -2 * self.lateral_leg_offset
             amplitude_x = self.in_place_step_length \
                 * (turning_radius * rotate_right - factor * self.lateral_leg_offset) / turning_radius * rotate_right
