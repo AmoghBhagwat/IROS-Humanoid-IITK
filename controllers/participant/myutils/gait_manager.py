@@ -25,6 +25,7 @@ class GaitManager():
         self.kinematics = Kinematics()
         joints = ['HipYawPitch', 'HipRoll', 'HipPitch', 'KneePitch', 'AnklePitch', 'AnkleRoll']
         self.L_leg_motors = []
+        self.direction = 1
         for joint in joints:
             motor = robot.getDevice(f'L{joint}')
             position_sensor = motor.getPositionSensor()
@@ -44,12 +45,17 @@ class GaitManager():
     def update_radius_calibration(self, radius_calibration):
         self.gait_generator.set_radius_calibration(radius_calibration)
 
-    def command_to_motors(self, desired_radius=None, heading_angle=0, rotate_right=-1):
+    def update_direction(self, direction):
+        self.direction = direction
+
+    def command_to_motors(self, desired_radius=None, heading_angle=0):
         """
         Compute the desired positions of the robot's legs for a desired radius (R > 0 is a right turn)
         and a desired heading angle (in radians. 0 is straight on, > 0 is turning left).
         Send the commands to the motors.
         """
+        rotate_right = self.direction
+        
         if not desired_radius:
             desired_radius = 1e3
         x, y, z, yaw = self.gait_generator.compute_leg_position(

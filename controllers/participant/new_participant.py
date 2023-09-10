@@ -49,6 +49,20 @@ class Sultaan (Robot):
             'chest': self.getDevice('ChestBoard/Led'), 
         }
 
+        self.head_pitch = self.getDevice("HeadPitch")
+        self.right_foot_sensor = self.getDevice('RFsr')
+        self.right_foot_sensor.enable(self.time_step)
+        self.left_foot_sensor = self.getDevice('LFsr')
+        self.left_foot_sensor.enable(self.time_step)
+        self.rl = self.getDevice('RFoot/Bumper/Left')
+        self.rr = self.getDevice('RFoot/Bumper/Right')
+        self.ll = self.getDevice('LFoot/Bumper/Left')
+        self.lr = self.getDevice('LFoot/Bumper/Right')
+        self.rl.enable(self.time_step)
+        self.rr.enable(self.time_step)
+        self.ll.enable(self.time_step)
+        self.lr.enable(self.time_step)
+
         self.botVisible = True
         self.area = 0
         self.previousPosition = 0
@@ -74,6 +88,28 @@ class Sultaan (Robot):
             elif t > 2:
                 self.fall_detector.check()
 
+                if (not self.on_ring()):
+                    slope = self.red_slope()
+
+                    if (slope == -1):
+                        self.gait_manager.update_radius_calibration(0)
+                    elif (slope == 0):
+                        self.gait_manager.update_radius_calibration(0)
+                        self.gait_manager.update_direction(1)
+                        if self.foot_sensor() > 0:
+                            self.library.play('Khushi3')
+                    elif (slope == 1):
+                        self.gait_manager.update_radius_calibration(0)
+                        self.gait_manager.update_direction(-1)
+                        if self.foot_sensor() > 0:
+                            self.library.play('Khushi3')
+                    else:
+                        self.gait_manager.update_radius_calibration(0.93)
+                        if self.foot_sensor() > 0:
+                            self.library.play('Khushi3')
+                    
+                    continue
+
                 self.fall = self.fall_detector.detect_fall()
                 if (self.fall): # equivalent to if not self.fall
                     continue
@@ -93,6 +129,49 @@ class Sultaan (Robot):
     def start_sequence(self):
         """At the beginning of the match, the robot walks forwards to move away from the edges."""
         self.gait_manager.command_to_motors(heading_angle=3.14/2)
+
+    def foot_sensor(self):
+        return self.rl.getValue() + self.rr.getValue() + self.lr.getValue() + self.ll.getValue()
+    
+    def on_ring(self):
+        image = self.camera2.get_image()
+        hsv_image = cv2.cvtColor(image,cv2.COLOR_BGR2HSV)
+        img1 = hsv_image.copy()
+        img2 = hsv_image.copy()
+        
+        colorr_low = np.array([193,62,35])
+        colorr_high = np.array([205,107,65])
+        colorf_low = np.array([83,62,42])
+        colorf_high = np.array([154,110,70])
+        mask1 = cv2.inRange(img1, colorr_low, colorr_high)
+        mask2 = cv2.inRange(img2, colorf_low, colorf_high)
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+        mask1 = cv2.morphologyEx(mask1, cv2.MORPH_OPEN, kernel)
+        mask2 = cv2.morphologyEx(mask2, cv2.MORPH_OPEN, kernel)
+        res1 = cv2.bitwise_and(img1,img1,mask1)
+        res2 =  cv2.bitwise_and(img2,img2,mask2)
+        gray1 = cv2.cvtColor(res1, cv2.COLOR_BGR2GRAY)
+        gray2 = cv2.cvtColor(res2, cv2.COLOR_BGR2GRAY)
+        contours1, _ = cv2.findContours(gray1.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours2, _ = cv2.findContours(gray2.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours1 = sorted(contours1, key=cv2.contourArea, reverse=True)
+        contours2 = sorted(contours2, key=cv2.contourArea, reverse=True)
+        # Check if contours2 is non-zero before calculating its centroid
+        cy1, cx1 = None, None
+        if len(contours1) > 0:
+            contours1 = sorted(contours1, key=cv2.contourArea, reverse=True)
+            cy1, cx1 = IP.get_contour_centroid(contours1[0])
+        # Check if contours2 is non-zero before calculating its centroid
+        cy2, cx2 = None, None
+        if len(contours2) > 0:
+            contours2 = sorted(contours2, key=cv2.contourArea, reverse=True)
+            cy2, cx2 = IP.get_contour_centroid(contours2[0])
+
+        if len(contours1) > 0 and len(contours2) > 0:
+            if cy1 > cy2:
+                return True
+            else:
+                return False
 
     def near_edge(self):
         image = self.camera2.get_image()
@@ -203,6 +282,33 @@ class Sultaan (Robot):
 
             time.sleep(0.1)
 
+    def red_slope(self):
+        image = self.camera2.get_image()
+        hsv_image = cv2.cvtColor(image,cv2.COLOR_BGR2HSV)
+        lower_red = np.array([0, 100, 100])
+        upper_red = np.array([10, 255, 255])
+
+        red_mask = cv2.inRange(hsv_image, lower_red, upper_red)
+
+        contours_red, _ = cv2.findContours(red_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours = sorted(contours_red, key=cv2.contourArea, reverse=True)[:1]
+        rotated_rect = None
+
+        if len(contours) > 0:
+            for contour in contours:
+                # Fit a rotated bounding rectangle around the contour
+                rotated_rect = cv2.minAreaRect(contour)
+                if(75 <= rotated_rect[2] <= 105):
+                    print("Moving Straight")
+                    return 2  # move straight
+                elif(0 < rotated_rect[2] < 75):
+                    #self.gait_manager.update_direction(-1, 1)
+                    return 1  # move in anticlockwise direction
+                else:
+                    #self.gait_manager.update_direction(1, -1)
+                    return 0  # move in clockwise direction
+        else:
+            return -1  # Return a code to indicate no contour found
+
 wrestler = Sultaan()
 wrestler.run()
-4
