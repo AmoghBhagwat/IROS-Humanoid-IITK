@@ -25,8 +25,8 @@ class Sultaan (Robot):
     SAFE_ZONE = 0.75
     TIME_BEFORE_DIRECTION_CHANGE = 200  # 8000 ms / 40 ms
 
-    def _init_(self):
-        Robot._init_(self)
+    def __init__(self):
+        Robot.__init__(self)
         self.time_step = int(self.getBasicTimeStep())
 
         self.library = MotionLibrary()
@@ -89,6 +89,7 @@ class Sultaan (Robot):
                 self.fall_detector.check()
 
                 if (not self.on_ring()):
+                    print("not on ring")
                     slope = self.red_slope()
 
                     if (slope == -1):
@@ -110,19 +111,26 @@ class Sultaan (Robot):
                     
                     continue
 
+                print("on ring")
+
                 self.fall = self.fall_detector.detect_fall()
                 if (self.fall): # equivalent to if not self.fall
+                    print("falling")
                     continue
                 
                 if self.near_edge():
                     print("near edge")
-                    self.library.play('TurnLeft60')
+                    self.gait_manager.update_radius_calibration(0)
+                    self.gait_manager.command_to_motors(desired_radius=0, heading_angle=0)
                     continue # TODO
 
                 if self.area > 0.5: # TODO find ideal threshold
+                    print("punching")
                     self.library.play('Punch')
                     continue
                 
+                self.gait_manager.update_radius_calibration(0.93)
+                print("walking")
                 self.walk()
                 
 
@@ -157,6 +165,7 @@ class Sultaan (Robot):
         contours1 = sorted(contours1, key=cv2.contourArea, reverse=True)
         contours2 = sorted(contours2, key=cv2.contourArea, reverse=True)
         # Check if contours2 is non-zero before calculating its centroid
+        
         cy1, cx1 = None, None
         if len(contours1) > 0:
             contours1 = sorted(contours1, key=cv2.contourArea, reverse=True)
@@ -167,11 +176,12 @@ class Sultaan (Robot):
             contours2 = sorted(contours2, key=cv2.contourArea, reverse=True)
             cy2, cx2 = IP.get_contour_centroid(contours2[0])
 
+        print("cy1 = ", cy1, ", cy2 = ", cy2)
         if len(contours1) > 0 and len(contours2) > 0:
             if cy1 > cy2:
-                return True
-            else:
                 return False
+            else:
+                return True
 
     def near_edge(self):
         image = self.camera2.get_image()
@@ -191,19 +201,10 @@ class Sultaan (Robot):
 
             height, width    = image.shape[:2]
             bottom_threshold = 0.92 * height
-            print("width = ", width, "height = ", height)
-
-            for point in box:
-                x,y = point
-                print(point)
-                # if y >= bottom_threshold:
-                #     print("point: ", point, " above threshold")
 
             points_below_threshold = sum(point[1] >= bottom_threshold for point in box)
             percentage_below_threshold = points_below_threshold / len(box)
-            print(f"percent below threshold = {percentage_below_threshold}, area = {cv2.contourArea(largest_contour)}")
             if percentage_below_threshold >= 0.5 and cv2.contourArea(largest_contour) >= 200:
-                print("turning")
                 return True
             
         return False
@@ -221,7 +222,8 @@ class Sultaan (Robot):
         
         if (self.botVisible == False):
             self.gait_manager.update_radius_calibration(0.1)
-            self.gait_manager.command_to_motors(desired_radius=0, heading_angle=0, rotate_right=rotate_right*-1)
+            self.gait_manager.update_direction(-rotate_right)
+            self.gait_manager.command_to_motors(desired_radius=0, heading_angle=0)
             return
             
         # if (abs(normalized_x) > 0.7):
@@ -230,8 +232,8 @@ class Sultaan (Robot):
         #     self.gait_manager.update_radius_calibration(0.93)
         #     rotate_right = 1
         self.gait_manager.update_radius_calibration(0.93)
-
-        self.gait_manager.command_to_motors(desired_radius=desired_radius, heading_angle=self.heading_angle, rotate_right=rotate_right)
+        self.gait_manager.update_direction(rotate_right)
+        self.gait_manager.command_to_motors(desired_radius=desired_radius, heading_angle=self.heading_angle)
 
 
     def _get_normalized_opponent_x(self):
@@ -278,7 +280,7 @@ class Sultaan (Robot):
             self.previousPosition = ((bounding_boxes[0][2].item()+bounding_boxes[0][0].item())/2-80)/80
             self.botDistance = triangulation.distance_to_camera(x_size * y_size)
 
-            print(f"position = {self.previousPosition}, distance = {self.botDistance}")
+            # print(f"position = {self.previousPosition}, distance = {self.botDistance}")
 
             time.sleep(0.1)
 
