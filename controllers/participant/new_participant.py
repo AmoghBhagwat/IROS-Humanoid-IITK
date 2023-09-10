@@ -25,8 +25,8 @@ class Sultaan (Robot):
     SAFE_ZONE = 0.75
     TIME_BEFORE_DIRECTION_CHANGE = 200  # 8000 ms / 40 ms
 
-    def __init__(self):
-        Robot.__init__(self)
+    def _init_(self):
+        Robot._init_(self)
         self.time_step = int(self.getBasicTimeStep())
 
         self.library = MotionLibrary()
@@ -37,7 +37,7 @@ class Sultaan (Robot):
         self.camera2 = Camera2(self)
         self.fall_detector = FallDetection(self.time_step, self)
         self.gait_manager = GaitManager(self, self.time_step)
-        self.heading_angle = 3.14 / 2
+        self.heading_angle = 0
         # Time before changing direction to stop the robot from falling off the ring
         self.counter = 0
         
@@ -49,7 +49,9 @@ class Sultaan (Robot):
             'chest': self.getDevice('ChestBoard/Led'), 
         }
 
-        self.botVisible = False
+        self.botVisible = True
+        self.area = 0
+        self.previousPosition = 0
 
     def run(self):
         yolo_thread = threading.Thread(target=self.yolo)
@@ -72,22 +74,25 @@ class Sultaan (Robot):
             elif t > 2:
                 self.fall_detector.check()
 
+                self.fall = self.fall_detector.detect_fall()
                 if (self.fall): # equivalent to if not self.fall
-                    return
+                    continue
                 
                 if self.near_edge():
-                    return # TODO
+                    print("near edge")
+                    self.library.play('TurnLeft60')
+                    continue # TODO
 
                 if self.area > 0.5: # TODO find ideal threshold
                     self.library.play('Punch')
-                    return
+                    continue
                 
                 self.walk()
                 
 
     def start_sequence(self):
         """At the beginning of the match, the robot walks forwards to move away from the edges."""
-        self.gait_manager.command_to_motors(heading_angle=0)
+        self.gait_manager.command_to_motors(heading_angle=3.14/2)
 
     def near_edge(self):
         image = self.camera2.get_image()
@@ -105,25 +110,26 @@ class Sultaan (Robot):
             box = cv2.boxPoints(rect)
             box = np.intp(box)
 
-            width, height = image.shape[:2]
+            height, width    = image.shape[:2]
             bottom_threshold = 0.92 * height
+            print("width = ", width, "height = ", height)
+
+            for point in box:
+                x,y = point
+                print(point)
+                # if y >= bottom_threshold:
+                #     print("point: ", point, " above threshold")
 
             points_below_threshold = sum(point[1] >= bottom_threshold for point in box)
             percentage_below_threshold = points_below_threshold / len(box)
-
-            if percentage_below_threshold >= 0.5 and cv2.contourArea(largest_contour) >= 0.5:
+            print(f"percent below threshold = {percentage_below_threshold}, area = {cv2.contourArea(largest_contour)}")
+            if percentage_below_threshold >= 0.5 and cv2.contourArea(largest_contour) >= 200:
+                print("turning")
                 return True
             
         return False
 
     def walk(self):
-        if (self.botVisible == False):
-            self.gait_manager.command_to_motors()
-            return
-        
-        if (self.nearEdge()):
-            pass
-            
         normalized_x = self._get_normalized_opponent_x()
         
         desired_radius = abs(self.SMALLEST_TURNING_RADIUS / normalized_x) if abs(normalized_x) > 1e-3 else None
@@ -133,12 +139,18 @@ class Sultaan (Robot):
             rotate_right = 1
         else:
             rotate_right = -1
-
-        if (abs(normalized_x) > 0.7):
-            self.gait_manager.update_radius_calibration(0)
-        else:
-            self.gait_manager.update_radius_calibration(0.93)
-            rotate_right = 1
+        
+        if (self.botVisible == False):
+            self.gait_manager.update_radius_calibration(0.1)
+            self.gait_manager.command_to_motors(desired_radius=0, heading_angle=0, rotate_right=rotate_right*-1)
+            return
+            
+        # if (abs(normalized_x) > 0.7):
+        #     self.gait_manager.update_radius_calibration(0)
+        # else:
+        #     self.gait_manager.update_radius_calibration(0.93)
+        #     rotate_right = 1
+        self.gait_manager.update_radius_calibration(0.93)
 
         self.gait_manager.command_to_motors(desired_radius=desired_radius, heading_angle=self.heading_angle, rotate_right=rotate_right)
 
@@ -157,6 +169,7 @@ class Sultaan (Robot):
         boxes = model([reference_image]).xyxy[0]
         
         while (len(boxes) == 0):
+            print("still finding reference image")
             boxes = model([reference_image]).xyxy[0]
         
         x_size = boxes[0][2].item() - boxes[0][0].item()
@@ -174,16 +187,22 @@ class Sultaan (Robot):
 
             bounding_boxes = results.xyxy[0]
 
-            if (len(bounding_boxes == 0)):
+            if (len(bounding_boxes) == 0):
                 self.botVisible = False
                 continue
 
             self.botVisible = True
 
-            x_size = boxes[0][2].item() - boxes[0][0].item()
-            y_size = boxes[0][3].item() - boxes[0][1].item()
+            x_size = bounding_boxes[0][2].item() - bounding_boxes[0][0].item()
+            y_size = bounding_boxes[0][3].item() - bounding_boxes[0][1].item()
 
-            self.previousPosition = ((boxes[0][2].item()+boxes[0][0].item())/2-80)/80
+            self.previousPosition = ((bounding_boxes[0][2].item()+bounding_boxes[0][0].item())/2-80)/80
             self.botDistance = triangulation.distance_to_camera(x_size * y_size)
 
+            print(f"position = {self.previousPosition}, distance = {self.botDistance}")
+
             time.sleep(0.1)
+
+wrestler = Sultaan()
+wrestler.run()
+4
