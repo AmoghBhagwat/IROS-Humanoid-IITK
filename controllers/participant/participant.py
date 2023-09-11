@@ -85,7 +85,7 @@ class Sultaan (Robot):
 
             t = self.getTime()
             self.gait_manager.update_theta()
-            if 0.3 < t < 2 or self.modelLoaded == False:
+            if 0.3 < t < 2:
                 self.start_sequence()
             elif t > 2:
                 self.fall_detector.check()
