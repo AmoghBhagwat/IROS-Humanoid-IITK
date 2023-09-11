@@ -64,8 +64,9 @@ class Sultaan (Robot):
         self.ll.enable(self.time_step)
         self.lr.enable(self.time_step)
 
+        self.modelLoaded = False
         self.botVisible = True
-        self.area = 0
+        self.botDistance = 20.0
         self.previousPosition = 0
 
     def run(self):
@@ -84,7 +85,7 @@ class Sultaan (Robot):
 
             t = self.getTime()
             self.gait_manager.update_theta()
-            if 0.3 < t < 2:
+            if 0.3 < t < 2 or self.modelLoaded == False:
                 self.start_sequence()
             elif t > 2:
                 self.fall_detector.check()
@@ -121,10 +122,9 @@ class Sultaan (Robot):
                     self.gait_manager.command_to_motors(desired_radius=0, heading_angle=0)
                     continue
 
-                if self.area > 0.3: # TODO find ideal threshold
+                if self.botDistance < 0.2: # TODO find ideal threshold
                     print("punching")
-                    self.library.play('Punch')
-                    continue
+                    # continue
                 
                 self.gait_manager.update_radius_calibration(0.93)
                 print("walking")
@@ -133,7 +133,8 @@ class Sultaan (Robot):
 
     def start_sequence(self):
         """At the beginning of the match, the robot walks forwards to move away from the edges."""
-        self.gait_manager.command_to_motors(heading_angle=3.14/2)
+        self.library.play('Punch')
+        self.gait_manager.command_to_motors(heading_angle=0, desired_radius=0)
 
     def foot_sensor(self):
         return self.rl.getValue() + self.rr.getValue() + self.lr.getValue() + self.ll.getValue()
@@ -230,6 +231,7 @@ class Sultaan (Robot):
         #     rotate_right = 1
         self.gait_manager.update_radius_calibration(0.93)
         self.gait_manager.update_direction(rotate_right)
+        self.library.play('Punch')
         self.gait_manager.command_to_motors(desired_radius=desired_radius, heading_angle=self.heading_angle)
 
 
@@ -240,7 +242,6 @@ class Sultaan (Robot):
         model = torch.hub.load('yolov5/', 'custom', path='recent.pt', source='local')
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model.to(device).eval()
-        self.model_loaded = True
         
         # Get reference image for triangulation
         reference_image = cv2.cvtColor(self.camera.get_image(), cv2.COLOR_BGR2RGB)
@@ -250,6 +251,8 @@ class Sultaan (Robot):
             print("still finding reference image")
             boxes = model([reference_image]).xyxy[0]
         
+        self.modelLoaded = True
+
         x_size = boxes[0][2].item() - boxes[0][0].item()
         y_size = boxes[0][3].item() - boxes[0][1].item()
         area = x_size * y_size  
@@ -276,6 +279,7 @@ class Sultaan (Robot):
 
             self.previousPosition = ((bounding_boxes[0][2].item()+bounding_boxes[0][0].item())/2-80)/80
             self.botDistance = triangulation.distance_to_camera(x_size * y_size)
+            print(f"distance = {self.botDistance}")
 
             # print(f"position = {self.previousPosition}, distance = {self.botDistance}")
 
