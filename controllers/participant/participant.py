@@ -32,6 +32,7 @@ class Sultaan (Robot):
         self.library = MotionLibrary()
         self.library.add('Shove', './Shove.motion', loop = False)
         self.library.add('Punch', './Punch.motion', loop = False)
+        self.library.add('Khushi3', './Khushi3.motion', loop = False)
 
         self.camera = Camera(self)
         self.camera2 = Camera2(self)
@@ -111,20 +112,16 @@ class Sultaan (Robot):
                     
                     continue
 
-                print("on ring")
-
                 self.fall = self.fall_detector.detect_fall()
                 if (self.fall): # equivalent to if not self.fall
-                    print("falling")
                     continue
                 
                 if self.near_edge():
-                    print("near edge")
                     self.gait_manager.update_radius_calibration(0)
                     self.gait_manager.command_to_motors(desired_radius=0, heading_angle=0)
-                    continue # TODO
+                    continue
 
-                if self.area > 0.5: # TODO find ideal threshold
+                if self.area > 0.3: # TODO find ideal threshold
                     print("punching")
                     self.library.play('Punch')
                     continue
