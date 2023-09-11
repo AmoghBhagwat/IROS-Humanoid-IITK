@@ -253,7 +253,7 @@ class Sultaan (Robot):
         area = x_size * y_size  
         triangulation = Triangulation(2.0, 0.5, area)
 
-        while True: # run forever
+        while True: # run forever/
             image = self.camera.get_image()
             if image.shape[2] == 4:
                 image = image[:, :, :3]
