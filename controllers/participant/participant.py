@@ -110,7 +110,8 @@ class Sultaan (Robot):
                         self.gait_manager.update_radius_calibration(0.93)
                         if self.foot_sensor() > 0:
                             self.library.play('Khushi3')
-                    
+
+                    self.gait_manager.command_to_motors(desired_radius=0, heading_angle=0)
                     continue
 
                 self.fall = self.fall_detector.detect_fall()
@@ -142,28 +143,23 @@ class Sultaan (Robot):
     def on_ring(self):
         image = self.camera2.get_image()
         hsv_image = cv2.cvtColor(image,cv2.COLOR_BGR2HSV)
-        img1 = hsv_image.copy()
-        img2 = hsv_image.copy()
-        
-        colorr_low = np.array([193,62,35])
-        colorr_high = np.array([205,107,65])
-        colorf_low = np.array([83,62,42])
-        colorf_high = np.array([154,110,70])
-        mask1 = cv2.inRange(img1, colorr_low, colorr_high)
-        mask2 = cv2.inRange(img2, colorf_low, colorf_high)
+        m = 0
+        gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        colorr_low = 168  
+        colorr_high = 209
+        colorf_low = 70  
+        colorf_high = 102
+        # lower_red = (193, 62, 35)
+        # upper_red = (205, 107, 65)
+        # lower_red = 
+        # upper_red = (205, 107, 65)
+        mask1 = cv2.inRange(gray_image, colorr_low, colorr_high)
+        mask2 = cv2.inRange(gray_image, colorf_low, colorf_high)
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
         mask1 = cv2.morphologyEx(mask1, cv2.MORPH_OPEN, kernel)
+        contours1, _ = cv2.findContours(mask1, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         mask2 = cv2.morphologyEx(mask2, cv2.MORPH_OPEN, kernel)
-        res1 = cv2.bitwise_and(img1,img1,mask1)
-        res2 =  cv2.bitwise_and(img2,img2,mask2)
-        gray1 = cv2.cvtColor(res1, cv2.COLOR_BGR2GRAY)
-        gray2 = cv2.cvtColor(res2, cv2.COLOR_BGR2GRAY)
-        contours1, _ = cv2.findContours(gray1.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        contours2, _ = cv2.findContours(gray2.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        contours1 = sorted(contours1, key=cv2.contourArea, reverse=True)
-        contours2 = sorted(contours2, key=cv2.contourArea, reverse=True)
-        # Check if contours2 is non-zero before calculating its centroid
-        
+        contours2, _ = cv2.findContours(mask2, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         cy1, cx1 = None, None
         if len(contours1) > 0:
             contours1 = sorted(contours1, key=cv2.contourArea, reverse=True)
@@ -173,13 +169,12 @@ class Sultaan (Robot):
         if len(contours2) > 0:
             contours2 = sorted(contours2, key=cv2.contourArea, reverse=True)
             cy2, cx2 = IP.get_contour_centroid(contours2[0])
-
         print("cy1 = ", cy1, ", cy2 = ", cy2)
         if len(contours1) > 0 and len(contours2) > 0:
             if cy1 > cy2:
-                return False
-            else:
                 return True
+            else:
+                return False
 
     def near_edge(self):
         image = self.camera2.get_image()
