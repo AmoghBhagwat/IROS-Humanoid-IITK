@@ -209,9 +209,9 @@ class Sultaan (Robot):
 
         rotate_right = 0
         if normalized_x > 0:
-            rotate_right = 1
-        else:
             rotate_right = -1
+        else:
+            rotate_right = 1
         
         if (self.botVisible == False):
             self.gait_manager.update_radius_calibration(0.1)
