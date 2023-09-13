@@ -64,8 +64,9 @@ class Sultaan (Robot):
         self.ll.enable(self.time_step)
         self.lr.enable(self.time_step)
 
+        self.modelLoaded = False
         self.botVisible = True
-        self.area = 0
+        self.botDistance = 20.0
         self.previousPosition = 0
 
     def run(self):
@@ -109,7 +110,8 @@ class Sultaan (Robot):
                         self.gait_manager.update_radius_calibration(0.93)
                         if self.foot_sensor() > 0:
                             self.library.play('Khushi3')
-                    
+
+                    self.gait_manager.command_to_motors(desired_radius=0, heading_angle=0)
                     continue
 
                 self.fall = self.fall_detector.detect_fall()
@@ -121,10 +123,9 @@ class Sultaan (Robot):
                     self.gait_manager.command_to_motors(desired_radius=0, heading_angle=0)
                     continue
 
-                if self.area > 0.3: # TODO find ideal threshold
+                if self.botDistance < 0.2: # TODO find ideal threshold
                     print("punching")
-                    self.library.play('Punch')
-                    continue
+                    # continue
                 
                 self.gait_manager.update_radius_calibration(0.93)
                 print("walking")
@@ -133,7 +134,8 @@ class Sultaan (Robot):
 
     def start_sequence(self):
         """At the beginning of the match, the robot walks forwards to move away from the edges."""
-        self.gait_manager.command_to_motors(heading_angle=3.14/2)
+        self.library.play('Punch')
+        self.gait_manager.command_to_motors(heading_angle=0, desired_radius=0)
 
     def foot_sensor(self):
         return self.rl.getValue() + self.rr.getValue() + self.lr.getValue() + self.ll.getValue()
@@ -141,28 +143,23 @@ class Sultaan (Robot):
     def on_ring(self):
         image = self.camera2.get_image()
         hsv_image = cv2.cvtColor(image,cv2.COLOR_BGR2HSV)
-        img1 = hsv_image.copy()
-        img2 = hsv_image.copy()
-        
-        colorr_low = np.array([193,62,35])
-        colorr_high = np.array([205,107,65])
-        colorf_low = np.array([83,62,42])
-        colorf_high = np.array([154,110,70])
-        mask1 = cv2.inRange(img1, colorr_low, colorr_high)
-        mask2 = cv2.inRange(img2, colorf_low, colorf_high)
+        m = 0
+        gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        colorr_low = 168  
+        colorr_high = 209
+        colorf_low = 70  
+        colorf_high = 102
+        # lower_red = (193, 62, 35)
+        # upper_red = (205, 107, 65)
+        # lower_red = 
+        # upper_red = (205, 107, 65)
+        mask1 = cv2.inRange(gray_image, colorr_low, colorr_high)
+        mask2 = cv2.inRange(gray_image, colorf_low, colorf_high)
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
         mask1 = cv2.morphologyEx(mask1, cv2.MORPH_OPEN, kernel)
+        contours1, _ = cv2.findContours(mask1, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         mask2 = cv2.morphologyEx(mask2, cv2.MORPH_OPEN, kernel)
-        res1 = cv2.bitwise_and(img1,img1,mask1)
-        res2 =  cv2.bitwise_and(img2,img2,mask2)
-        gray1 = cv2.cvtColor(res1, cv2.COLOR_BGR2GRAY)
-        gray2 = cv2.cvtColor(res2, cv2.COLOR_BGR2GRAY)
-        contours1, _ = cv2.findContours(gray1.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        contours2, _ = cv2.findContours(gray2.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        contours1 = sorted(contours1, key=cv2.contourArea, reverse=True)
-        contours2 = sorted(contours2, key=cv2.contourArea, reverse=True)
-        # Check if contours2 is non-zero before calculating its centroid
-        
+        contours2, _ = cv2.findContours(mask2, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         cy1, cx1 = None, None
         if len(contours1) > 0:
             contours1 = sorted(contours1, key=cv2.contourArea, reverse=True)
@@ -172,13 +169,12 @@ class Sultaan (Robot):
         if len(contours2) > 0:
             contours2 = sorted(contours2, key=cv2.contourArea, reverse=True)
             cy2, cx2 = IP.get_contour_centroid(contours2[0])
-
         print("cy1 = ", cy1, ", cy2 = ", cy2)
         if len(contours1) > 0 and len(contours2) > 0:
             if cy1 > cy2:
-                return False
-            else:
                 return True
+            else:
+                return False
 
     def near_edge(self):
         image = self.camera2.get_image()
@@ -213,9 +209,9 @@ class Sultaan (Robot):
 
         rotate_right = 0
         if normalized_x > 0:
-            rotate_right = 1
-        else:
             rotate_right = -1
+        else:
+            rotate_right = 1
         
         if (self.botVisible == False):
             self.gait_manager.update_radius_calibration(0.1)
@@ -229,7 +225,8 @@ class Sultaan (Robot):
         #     self.gait_manager.update_radius_calibration(0.93)
         #     rotate_right = 1
         self.gait_manager.update_radius_calibration(0.93)
-        self.gait_manager.update_direction(-rotate_right)
+        self.gait_manager.update_direction(rotate_right)
+        self.library.play('Punch')
         self.gait_manager.command_to_motors(desired_radius=desired_radius, heading_angle=self.heading_angle)
 
 
@@ -240,7 +237,6 @@ class Sultaan (Robot):
         model = torch.hub.load('yolov5/', 'custom', path='recent.pt', source='local')
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model.to(device).eval()
-        self.model_loaded = True
         
         # Get reference image for triangulation
         reference_image = cv2.cvtColor(self.camera.get_image(), cv2.COLOR_BGR2RGB)
@@ -250,6 +246,8 @@ class Sultaan (Robot):
             print("still finding reference image")
             boxes = model([reference_image]).xyxy[0]
         
+        self.modelLoaded = True
+
         x_size = boxes[0][2].item() - boxes[0][0].item()
         y_size = boxes[0][3].item() - boxes[0][1].item()
         area = x_size * y_size  
@@ -276,6 +274,7 @@ class Sultaan (Robot):
 
             self.previousPosition = ((bounding_boxes[0][2].item()+bounding_boxes[0][0].item())/2-80)/80
             self.botDistance = triangulation.distance_to_camera(x_size * y_size)
+            print(f"distance = {self.botDistance}")
 
             # print(f"position = {self.previousPosition}, distance = {self.botDistance}")
 
