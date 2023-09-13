@@ -205,7 +205,7 @@ class Sultaan (Robot):
     def walk(self):
         normalized_x = self._get_normalized_opponent_x()
         
-        desired_radius = abs(self.SMALLEST_TURNING_RADIUS / normalized_x) if abs(normalized_x) > 1e-3 else None
+        desired_radius = self.SMALLEST_TURNING_RADIUS / normalized_x if abs(normalized_x) > 1e-3 else None
 
         rotate_right = 0
         if normalized_x > 0:
@@ -214,7 +214,7 @@ class Sultaan (Robot):
             rotate_right = 1
         
         if (self.botVisible == False):
-            self.gait_manager.update_radius_calibration(0.1)
+            self.gait_manager.update_radius_calibration(0)
             self.gait_manager.update_direction(-rotate_right)
             self.gait_manager.command_to_motors(desired_radius=0, heading_angle=0)
             return
