@@ -229,7 +229,7 @@ class Sultaan (Robot):
         #     self.gait_manager.update_radius_calibration(0.93)
         #     rotate_right = 1
         self.gait_manager.update_radius_calibration(0.93)
-        self.gait_manager.update_direction(rotate_right)
+        self.gait_manager.update_direction(-rotate_right)
         self.gait_manager.command_to_motors(desired_radius=desired_radius, heading_angle=self.heading_angle)
 
 
