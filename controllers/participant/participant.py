@@ -91,7 +91,6 @@ class Sultaan (Robot):
                 self.fall_detector.check()
 
                 if (not self.on_ring()):
-                    print("not on ring")
                     slope = self.red_slope()
 
                     if (slope == -1):
@@ -123,12 +122,7 @@ class Sultaan (Robot):
                     self.gait_manager.command_to_motors(desired_radius=0, heading_angle=0)
                     continue
 
-                if self.botDistance < 0.2: # TODO find ideal threshold
-                    print("punching")
-                    # continue
-                
                 self.gait_manager.update_radius_calibration(0.93)
-                print("walking")
                 self.walk()
                 
 
@@ -169,7 +163,6 @@ class Sultaan (Robot):
         if len(contours2) > 0:
             contours2 = sorted(contours2, key=cv2.contourArea, reverse=True)
             cy2, cx2 = IP.get_contour_centroid(contours2[0])
-        print("cy1 = ", cy1, ", cy2 = ", cy2)
         if len(contours1) > 0 and len(contours2) > 0:
             if cy1 > cy2:
                 return True
@@ -243,7 +236,6 @@ class Sultaan (Robot):
         boxes = model([reference_image]).xyxy[0]
         
         while (len(boxes) == 0):
-            print("still finding reference image")
             boxes = model([reference_image]).xyxy[0]
         
         self.modelLoaded = True
@@ -252,6 +244,8 @@ class Sultaan (Robot):
         y_size = boxes[0][3].item() - boxes[0][1].item()
         area = x_size * y_size  
         triangulation = Triangulation(2.0, 0.5, area)
+
+        print("yolo started")
 
         while True: # run forever
             image = self.camera.get_image()
@@ -274,9 +268,6 @@ class Sultaan (Robot):
 
             self.previousPosition = ((bounding_boxes[0][2].item()+bounding_boxes[0][0].item())/2-80)/80
             self.botDistance = triangulation.distance_to_camera(x_size * y_size)
-            print(f"distance = {self.botDistance}")
-
-            # print(f"position = {self.previousPosition}, distance = {self.botDistance}")
 
             time.sleep(0.1)
 
@@ -297,7 +288,6 @@ class Sultaan (Robot):
                 # Fit a rotated bounding rectangle around the contour
                 rotated_rect = cv2.minAreaRect(contour)
                 if(75 <= rotated_rect[2] <= 105):
-                    print("Moving Straight")
                     return 2  # move straight
                 elif(0 < rotated_rect[2] < 75):
                     #self.gait_manager.update_direction(-1, 1)
