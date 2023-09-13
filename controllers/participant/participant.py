@@ -68,10 +68,13 @@ class Sultaan (Robot):
         self.botVisible = True
         self.botDistance = 20.0
         self.previousPosition = 0
+        self.nearEdge = False
 
     def run(self):
         yolo_thread = threading.Thread(target=self.yolo)
+        edge_thread = threading.Thread(target=self.near_edge)
         yolo_thread.start()
+        edge_thread.start()
 
         while self.step(self.time_step) != -1:
             # Turn on LEDS 
@@ -117,7 +120,8 @@ class Sultaan (Robot):
                 if (self.fall): # equivalent to if not self.fall
                     continue
                 
-                if self.near_edge():
+                if self.nearEdge == True:
+                    print("near edge, turn back")
                     self.gait_manager.update_radius_calibration(0)
                     self.gait_manager.command_to_motors(desired_radius=0, heading_angle=0)
                     continue
@@ -170,30 +174,34 @@ class Sultaan (Robot):
                 return False
 
     def near_edge(self):
-        image = self.camera2.get_image()
-        hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-        lower_red = (0, 50, 50)
-        upper_red = (10, 255, 255)
-        mask = cv2.inRange(hsv_image, lower_red, upper_red)
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5,5))
-        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-        if (len(contours) > 0):
-            largest_contour = max(contours, key=cv2.contourArea)
-            rect = cv2.minAreaRect(largest_contour)
-            box = cv2.boxPoints(rect)
-            box = np.intp(box)
-
-            height, width    = image.shape[:2]
-            bottom_threshold = 0.92 * height
-
-            points_below_threshold = sum(point[1] >= bottom_threshold for point in box)
-            percentage_below_threshold = points_below_threshold / len(box)
-            if percentage_below_threshold >= 0.5 and cv2.contourArea(largest_contour) >= 200:
-                return True
-            
-        return False
+        print("near edge thread started")
+        while True:
+            image = self.camera2.get_image()
+            hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+            lower_red = (0, 50, 50)
+            upper_red = (10, 255, 255)
+            mask = cv2.inRange(hsv_image, lower_red, upper_red)
+            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5,5))
+            mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+            if (len(contours) > 0):
+                largest_contour = max(contours, key=cv2.contourArea)
+                rect = cv2.minAreaRect(largest_contour)
+                box = cv2.boxPoints(rect)
+                box = np.intp(box)
+    
+                height, width    = image.shape[:2]
+                bottom_threshold = 0.92 * height
+    
+                points_below_threshold = sum(point[1] >= bottom_threshold for point in box)
+                percentage_below_threshold = points_below_threshold / len(box)
+                if percentage_below_threshold >= 0.5 and cv2.contourArea(largest_contour) >= 200:
+                    self.nearEdge = True
+                else:
+                    self.nearEdge = False
+            else:
+                self.nearEdge = False
 
     def walk(self):
         normalized_x = self._get_normalized_opponent_x()
