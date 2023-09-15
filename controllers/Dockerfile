@@ -24,7 +24,7 @@ RUN pip3 install --upgrade pip && \
     pandas \
     seaborn \
     setuptools
-
+RUN pip3 install --upgrade setuptools
 
 # Environment variables needed for Webots
 # https://cyberbotics.com/doc/guide/running-extern-robot-controllers#remote-extern-controllers
