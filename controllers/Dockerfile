@@ -22,8 +22,8 @@ RUN pip3 install --upgrade pip && \
     tqdm \
     ultralytics \
     pandas \
-    seaborn
-    pip3 install --upgrade setuptools
+    seaborn \
+    setuptools
 
 
 # Environment variables needed for Webots
