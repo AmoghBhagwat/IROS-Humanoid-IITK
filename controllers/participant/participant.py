@@ -128,7 +128,7 @@ class Sultaan (Robot):
             largest_contour = max(contours, key=cv2.contourArea)
             rect = cv2.minAreaRect(largest_contour)
             box = cv2.boxPoints(rect)
-            box = np.int0(box)
+            box = np.intp(box)
 
             image_height, image_width = image.shape[:2]
             bottom_threshold = 0.92 * image_height
