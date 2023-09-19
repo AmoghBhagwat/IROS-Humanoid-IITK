@@ -1,15 +1,17 @@
 from controller import Robot
 import sys
-#sys.path.append('..')
+sys.path.append('..')
 from myutils.motion_library import MotionLibrary
 
-# Eve's locate_opponent() is implemented in this module:.
+# Eve's locate_opponent() is implemented in this module:
 from myutils.image_processing import ImageProcessing as IP
 from myutils.fall_detection import FallDetection
 from myutils.gait_manager import GaitManager
 from myutils.camera import Camera
+from myutils.camera2 import Camera2
 from myutils.finite_state_machine import FiniteStateMachine
-
+from myutils.ellipsoid_gait_generator import EllipsoidGaitGenerator
+from myutils.triangulation import Triangulation
 
 class Sultaan (Robot):
     SMALLEST_TURNING_RADIUS = 0.1
