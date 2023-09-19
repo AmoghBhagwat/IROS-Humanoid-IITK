@@ -25,6 +25,7 @@ class Sultaan (Robot):
         self.library = MotionLibrary()
 
         self.camera = Camera(self)
+        self.camera2 = Camera2(self)
         self.fall_detector = FallDetection(self.time_step, self)
         self.gait_manager = GaitManager(self, self.time_step)
         self.heading_angle = 3.14 / 2
