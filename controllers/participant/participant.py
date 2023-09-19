@@ -41,7 +41,7 @@ class Sultaan (Robot):
         self.heading_angle = 3.14 / 2
         self.counter = 0
         self.library.add('Shove', './Shove.motion', loop = False)
-        self.library.add('Punch', './Punch.motion', loop = False)
+        self.library.add('Punch', './khushi.motion', loop = False)
         self.leds = {
             'rightf': self.getDevice('Face/Led/Right'), 
             'leftf': self.getDevice('Face/Led/Left'), 
