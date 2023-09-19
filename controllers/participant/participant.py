@@ -83,8 +83,6 @@ class Sultaan (Robot):
             if 0.3 < t < 5:
                 self.start_sequence()
             elif t > 5:
-            # else:
-                # self.fall
                 self.fall_detector.check()
                 
                 if(not self.fall):
@@ -93,13 +91,9 @@ class Sultaan (Robot):
                         print("boundary overflow")
                         self.library.play('TurnLeft60')
                     else:
-                        if (self.model_loaded == False):
-                            self.walk()
-                            return
-                        
-                        # print(f"area = {self.area}")
+                        print(f"area = {self.area}")
                         if (self.area > 0.2):
-                            # print(f"area = {self.area}, shoving")
+                            print(f"area = {self.area}, shoving")
                             self.library.play('Punch')
                         else:
                             self.walk()
@@ -167,7 +161,6 @@ class Sultaan (Robot):
         model = torch.hub.load('yolov5/', 'custom', path='recent.pt', source='local')
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model.to(device).eval()
-        self.model_loaded = True
         
         reference_image = cv2.cvtColor(self.camera.get_image(), cv2.COLOR_BGR2RGB)
         boxes = model([reference_image]).xyxy[0]
@@ -179,6 +172,7 @@ class Sultaan (Robot):
         y_size = boxes[0][3].item() - boxes[0][1].item()
         area = x_size * y_size
         triangulation = Triangulation(2.0, 0.5, area)
+        print("found reference image")
         # while True:
         # Capture the image from the camera
         while True:
