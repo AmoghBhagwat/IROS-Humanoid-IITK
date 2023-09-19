@@ -85,18 +85,15 @@ class Sultaan (Robot):
             elif t > 5:
                 self.fall_detector.check()
                 
-                if(not self.fall):
-                    d = self.getDistance()
-                    if d == 1:
-                        print("boundary overflow")
-                        self.library.play('TurnLeft60')
+                d = self.getDistance()
+                if d == 1:
+                    print("boundary overflow")
+                    self.library.play('TurnLeft60')
+                else:
+                    if (self.area > 0.2):
+                        self.library.play('Punch')
                     else:
-                        print(f"area = {self.area}")
-                        if (self.area > 0.2):
-                            print(f"area = {self.area}, shoving")
-                            self.library.play('Punch')
-                        else:
-                            self.walk()
+                        self.walk()
     
     def getDistance(self):          #we use bottom oriented image for edge detection
         import cv2
@@ -201,18 +198,16 @@ class Sultaan (Robot):
             else:
                 self.is_bot_visible = True
                 
-            # print("Bot visible: " + str(self.is_bot_visible))
+            print("Bot visible: " + str(self.is_bot_visible))
             if self.is_bot_visible:
-                # print("Box: " + str(boxes))
-                # print("x = " + str((boxes[0][0].item()-80) / 80))
-
                 x_size = boxes[0][2].item() - boxes[0][0].item()
                 y_size = boxes[0][3].item() - boxes[0][1].item()
                 self.area = x_size * y_size / (120*160)
                 self.previousPosition = ((boxes[0][2].item()+boxes[0][0].item())/2-80)/80
+                print(f"area = {self.area}, pos = {self.previousPosition}")
 
             # Sleep for a short duration to avoid excessive CPU usage
-            time.sleep(0.1)
+            time.sleep(1)
     
     
     
