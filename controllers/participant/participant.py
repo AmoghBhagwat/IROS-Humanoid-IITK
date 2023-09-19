@@ -13,14 +13,24 @@ from myutils.finite_state_machine import FiniteStateMachine
 from myutils.ellipsoid_gait_generator import EllipsoidGaitGenerator
 from myutils.triangulation import Triangulation
 
-class Sultaan (Robot):
-    SMALLEST_TURNING_RADIUS = 0.1
-    SAFE_ZONE = 0.75
-    TIME_BEFORE_DIRECTION_CHANGE = 60  # 8000 ms / 40 ms/
+import torch
+import cv2
+from torchvision import transforms
+import numpy as np
+import time
+import threading
 
+class Sultaan (Robot):
+    SMALLEST_TURNING_RADIUS = 0.1 #0.1
+    SAFE_ZONE = 0.75
+    TIME_BEFORE_DIRECTION_CHANGE = 40   # 80
+    k=0
+    is_bot_visible = True
+    
     def __init__(self):
         Robot.__init__(self)
-        self.fall = False
+        self.fall = Falsed = 0
+        
         self.time_step = int(self.getBasicTimeStep())
         self.library = MotionLibrary()
 
@@ -30,7 +40,8 @@ class Sultaan (Robot):
         self.gait_manager = GaitManager(self, self.time_step)
         self.heading_angle = 3.14 / 2
         self.counter = 0
-        self.library.add('New', './khushi.motion', loop = True)
+        self.library.add('Shove', './Shove.motion', loop = False)
+        self.library.add('Punch', './Punch.motion', loop = False)
         self.leds = {
             'rightf': self.getDevice('Face/Led/Right'), 
             'leftf': self.getDevice('Face/Led/Left'), 
@@ -38,27 +49,25 @@ class Sultaan (Robot):
             'lefte': self.getDevice('Ears/Led/Left'), 
             'chest': self.getDevice('ChestBoard/Led'), 
         }
+        
+        self.HeadPitch = self.getDevice("HeadPitch")
+       
+        self.previousPosition = 0.5
+        self.is_bot_visible = True
+        self.area = 0
 
-
+        self.model_loaded = False
+        #self.library.play('Cust')
         # for locking motor
-        joints = ['HipYawPitch', 'HipRoll', 'HipPitch', 'KneePitch', 'AnklePitch', 'AnkleRoll']
-        self.L_leg_motors = []
-        for joint in joints:
-            motor = self.getDevice(f'L{joint}')
-            position_sensor = motor.getPositionSensor()
-            position_sensor.enable(1)
-            self.L_leg_motors.append(motor)
-
-        self.R_leg_motors = []
-        for joint in joints:
-            motor = self.getDevice(f'R{joint}')
-            position_sensor = motor.getPositionSensor()
-            position_sensor.enable(1)
-            self.R_leg_motors.append(motor)
-
+       
     def run(self):
+        k=0
+        
+        yolo_thread = threading.Thread(target=self.run_yolo)
+        yolo_thread.start()
         while self.step(self.time_step) != -1:
             # We need to update the internal theta value of the gait manager at every step:
+            #self.HeadPitch.setPosition(0)
             t = self.getTime()
             self.leds['rightf'].set(0xff0000)
             self.leds['leftf'].set(0xff0000)
@@ -66,24 +75,25 @@ class Sultaan (Robot):
             self.leds['lefte'].set(0xff0000)
             self.leds['chest'].set(0xff0000)
             self.gait_manager.update_theta()
+            #x, k, z, yaw = EllipsoidGaitGenerator.compute_leg_position(self, is_left = 'True', desired_radius=1e3, heading_angle=0)
+            #print('x=' + str(x))
+            
             if(self.fall_detector.detect_fall()): 
                 self.fall = True
-            if 0.3 < t < 2:
+            if 0.3 < t < 5:
                 self.start_sequence()
-            elif t > 2:
+            elif t > 5:
+                self.fall_detector.check()
+                
                 d = self.getDistance()
                 if d == 1:
                     print("boundary overflow")
                     self.library.play('TurnLeft60')
-                self.fall_detector.check()
-                if(not self.fall):
-                    self.walk()
-
-    def start_sequence(self):
-        """At the beginning of the match, the robot walks forwards to move away from the edges."""
-        self.gait_manager.command_to_motors(heading_angle=0)
-
-
+                else:
+                    if (self.area > 0.2):
+                        self.library.play('Punch')
+                    else:
+                        self.walk()
     
     def getDistance(self):          #we use bottom oriented image for edge detection
         import cv2
@@ -138,21 +148,100 @@ class Sultaan (Robot):
         return m
 
     
+    
+    def run_yolo(self):
+        # Load the YOLOv5 model
+        model = torch.hub.load('yolov5/', 'custom', path='recent.pt', source='local')
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        model.to(device).eval()
+        
+        reference_image = cv2.cvtColor(self.camera.get_image(), cv2.COLOR_BGR2RGB)
+        boxes = model([reference_image]).xyxy[0]
 
+        while (len(boxes) == 0):
+            boxes = model([reference_image]).xyxy[0]
+        
+        x_size = boxes[0][2].item() - boxes[0][0].item()
+        y_size = boxes[0][3].item() - boxes[0][1].item()
+        area = x_size * y_size
+        triangulation = Triangulation(2.0, 0.5, area)
+        print("found reference image")
+        # while True:
+        # Capture the image from the camera
+        while True:
+            image = self.camera.get_image()
+
+            # Remove alpha channel if present
+            if image.shape[2] == 4:
+                image = image[:, :, :3]
+
+            # Convert image to RGB format
+            img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+            # Perform object detection
+            results = model([img])
+
+            # Display the detections
+
+            # Access individual detection attributes (e.g., bounding boxes, labels)
+            boxes = results.xyxy[0]#.numpy()
+            # labels = results.names[0]
+
+            # Process the detection results as needed
+            if len(boxes) == 0:
+                self.is_bot_visible = False
+            #    self.library.play('TurnLeft60')
+            else:
+                self.is_bot_visible = True
+                
+            print("Bot visible: " + str(self.is_bot_visible))
+            if self.is_bot_visible:
+                x_size = boxes[0][2].item() - boxes[0][0].item()
+                y_size = boxes[0][3].item() - boxes[0][1].item()
+                self.area = x_size * y_size / (120*160)
+                self.previousPosition = ((boxes[0][2].item()+boxes[0][0].item())/2-80)/80
+                print(f"area = {self.area}, pos = {self.previousPosition}")
+
+            # Sleep for a short duration to avoid excessive CPU usage
+            time.sleep(1)
+    
+    
+    
+  
+    def start_sequence(self):
+        """At the beginning of the match, the robot walks forwards to move away from the edges."""
+        self.gait_manager.command_to_motors(heading_angle=0)
+        
+    
+    
     def walk(self):
-        normalized_x = self._get_normalized_opponent_x() 
+        normalized_x = self.previousPosition
         desired_radius = (self.SMALLEST_TURNING_RADIUS / normalized_x) if abs(normalized_x) > 1e-3 else None
-        if(normalized_x > 0): 
+        
+        if (self.is_bot_visible == False):
+            # print("not visible")
+            self.heading_angle = -abs(self.previousPosition) * (3.14 / 3)
+            self.counter = 0
+            self.gait_manager.command_to_motors(desired_radius=desired_radius/2, heading_angle=self.heading_angle)
+            return  
+        
+        if(normalized_x > 0.7): 
             self.heading_angle = 3.14/4
             self.counter = 0;  
-        elif(normalized_x < 0): 
+        elif(normalized_x < -0.7): 
             self.heading_angle = -(3.14/4)
-            self.counter = 0 
-        elif(normalized_x == 0): 
-            return  
+            self.counter = 0
+        else:
+            self.heading_angle = 0
+            self.counter = 0
+        # if (abs(normalized_x) > 0.5):
+        #     self.gait_manager.update_radius_calibration(0)
+        # else:
+        #     self.gait_manager.update_radius_calibration(0.93)
         self.counter += 1
-        self.gait_manager.command_to_motors(desired_radius=desired_radius, heading_angle=self.heading_angle)
-        self.library.play('New')
+        # print(f"turning with radius {desired_radius}, angle {self.heading_angle}")
+        self.gait_manager.command_to_motors(desired_radius=desired_radius/2, heading_angle=self.heading_angle)
+        #self.library.play('Khushi')
 
     def _get_normalized_opponent_x(self):
         """Locate the opponent in the image and return its horizontal position in the range [-1, 1]."""
@@ -160,11 +249,11 @@ class Sultaan (Robot):
         _, _, horizontal_coordinate = IP.locate_opponent(img)
         if horizontal_coordinate is None:
             return 0
-        return horizontal_coordinate * 2 / img.shape[1] - 1
+        
+        normalized = horizontal_coordinate * 2 / img.shape[1] - 1
+
+        return normalized
 
 # create the Robot instance and run main loop
 wrestler = Sultaan()
 wrestler.run()
-
-
-
