@@ -7,7 +7,7 @@ from myutils.motion_library import MotionLibrary
 from myutils.image_processing import ImageProcessing as IP
 from myutils.fall_detection import FallDetection
 from myutils.gait_manager import GaitManager
-from mytils.camera import Camera
+from myutils.camera import Camera
 from myutils.finite_state_machine import FiniteStateMachine
 
 
