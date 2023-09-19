@@ -135,16 +135,12 @@ class Sultaan (Robot):
             
             for point in box:
                 x, y = point
-                if y >= bottom_threshold:
-                    print("Point:", point)
-                    print("Bottom Threshold:", bottom_threshold)
 
             points_below_threshold = sum(point[1] >= bottom_threshold for point in box)
             percentage_below_threshold = points_below_threshold / len(box)
             
             #if any(point[1] >= bottom_threshold for point in box):
             cv2.drawContours(image, [box], 0, (0, 255, 0), 2)
-            print('percentage_below_threshold: ', percentage_below_threshold)
             if percentage_below_threshold >= 0.5:    #print('point[1]: ', point)
                 if cv2.contourArea(largest_contour) >= 200:
                     
