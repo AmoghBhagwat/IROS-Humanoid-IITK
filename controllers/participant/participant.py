@@ -1,8 +1,9 @@
 from controller import Robot
 import sys
 sys.path.append('..')
-
 from myutils.motion_library import MotionLibrary
+
+# Eve's locate_opponent() is implemented in this module:
 from myutils.image_processing import ImageProcessing as IP
 from myutils.fall_detection import FallDetection
 from myutils.gait_manager import GaitManager
@@ -19,29 +20,28 @@ import numpy as np
 import time
 import threading
 
-
 class Sultaan (Robot):
-    SMALLEST_TURNING_RADIUS = 0.1
+    SMALLEST_TURNING_RADIUS = 0.1 #0.1
     SAFE_ZONE = 0.75
-    TIME_BEFORE_DIRECTION_CHANGE = 60  # 8000 ms / 40 ms
-
+    TIME_BEFORE_DIRECTION_CHANGE = 60   # 80
+    k=0
+    is_bot_visible = True
+    
     def __init__(self):
         Robot.__init__(self)
+        self.fall = Falsed = 0
+        
         self.time_step = int(self.getBasicTimeStep())
-
         self.library = MotionLibrary()
-        self.library.add('Shove', './Shove.motion', loop = False)
-        self.library.add('Punch', './Punch.motion', loop = False)
-        self.library.add('Khushi3', './Khushi3.motion', loop = False)
 
         self.camera = Camera(self)
         self.camera2 = Camera2(self)
         self.fall_detector = FallDetection(self.time_step, self)
         self.gait_manager = GaitManager(self, self.time_step)
-        self.heading_angle = 0
-        # Time before changing direction to stop the robot from falling off the ring
+        self.heading_angle = 3.14 / 2
         self.counter = 0
-        
+        self.library.add('Shove', './Shove.motion', loop = False)
+        self.library.add('Punch', './Punch.motion', loop = False)
         self.leds = {
             'rightf': self.getDevice('Face/Led/Right'), 
             'leftf': self.getDevice('Face/Led/Left'), 
@@ -49,262 +49,226 @@ class Sultaan (Robot):
             'lefte': self.getDevice('Ears/Led/Left'), 
             'chest': self.getDevice('ChestBoard/Led'), 
         }
+        
+        self.HeadPitch = self.getDevice("HeadPitch")
+       
+        self.previousPosition = 0.5
+        self.is_bot_visible = True
+        self.area = 0
 
-        self.head_pitch = self.getDevice("HeadPitch")
-        self.right_foot_sensor = self.getDevice('RFsr')
-        self.right_foot_sensor.enable(self.time_step)
-        self.left_foot_sensor = self.getDevice('LFsr')
-        self.left_foot_sensor.enable(self.time_step)
-        self.rl = self.getDevice('RFoot/Bumper/Left')
-        self.rr = self.getDevice('RFoot/Bumper/Right')
-        self.ll = self.getDevice('LFoot/Bumper/Left')
-        self.lr = self.getDevice('LFoot/Bumper/Right')
-        self.rl.enable(self.time_step)
-        self.rr.enable(self.time_step)
-        self.ll.enable(self.time_step)
-        self.lr.enable(self.time_step)
-
-        self.modelLoaded = False
-        self.botVisible = True
-        self.botDistance = 20.0
-        self.previousPosition = 0
-        self.nearEdge = False
-
+        self.model_loaded = False
+        #self.library.play('Cust')
+        # for locking motor
+       
     def run(self):
-        yolo_thread = threading.Thread(target=self.yolo)
-        edge_thread = threading.Thread(target=self.near_edge)
+        k=0
+        
+        yolo_thread = threading.Thread(target=self.run_yolo)
         yolo_thread.start()
-        edge_thread.start()
-
         while self.step(self.time_step) != -1:
-            # Turn on LEDS 
+            # We need to update the internal theta value of the gait manager at every step:
+            #self.HeadPitch.setPosition(0)
+            t = self.getTime()
             self.leds['rightf'].set(0xff0000)
             self.leds['leftf'].set(0xff0000)
             self.leds['righte'].set(0xff0000)
             self.leds['lefte'].set(0xff0000)
             self.leds['chest'].set(0xff0000)
-
-            self.fall = self.fall_detector.detect_fall()
-
-            t = self.getTime()
             self.gait_manager.update_theta()
-            if 0.3 < t < 2:
-                self.start_sequence()
-            elif t > 2:
-                self.fall_detector.check()
-
-                if (not self.on_ring()):
-                    slope = self.red_slope()
-
-                    if (slope == -1):
-                        self.gait_manager.update_radius_calibration(0)
-                    elif (slope == 0):
-                        self.gait_manager.update_radius_calibration(0)
-                        self.gait_manager.update_direction(1)
-                        if self.foot_sensor() > 0:
-                            self.library.play('Khushi3')
-                    elif (slope == 1):
-                        self.gait_manager.update_radius_calibration(0)
-                        self.gait_manager.update_direction(-1)
-                        if self.foot_sensor() > 0:
-                            self.library.play('Khushi3')
-                    else:
-                        self.gait_manager.update_radius_calibration(0.93)
-                        if self.foot_sensor() > 0:
-                            self.library.play('Khushi3')
-
-                    self.gait_manager.command_to_motors(desired_radius=0, heading_angle=0)
-                    continue
-
-                self.fall = self.fall_detector.detect_fall()
-                if (self.fall): # equivalent to if not self.fall
-                    continue
-                
-                if self.nearEdge == True:
-                    print("near edge, turn back")
-                    self.gait_manager.update_radius_calibration(0)
-                    self.gait_manager.command_to_motors(desired_radius=0, heading_angle=0)
-                    continue
-
-                self.gait_manager.update_radius_calibration(0.93)
-                self.walk()
-                
-
-    def start_sequence(self):
-        """At the beginning of the match, the robot walks forwards to move away from the edges."""
-        self.library.play('Punch')
-        self.gait_manager.command_to_motors(heading_angle=0, desired_radius=0)
-
-    def foot_sensor(self):
-        return self.rl.getValue() + self.rr.getValue() + self.lr.getValue() + self.ll.getValue()
-    
-    def on_ring(self):
-        image = self.camera2.get_image()
-        hsv_image = cv2.cvtColor(image,cv2.COLOR_BGR2HSV)
-        m = 0
-        gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        colorr_low = 168  
-        colorr_high = 209
-        colorf_low = 70  
-        colorf_high = 102
-        # lower_red = (193, 62, 35)
-        # upper_red = (205, 107, 65)
-        # lower_red = 
-        # upper_red = (205, 107, 65)
-        mask1 = cv2.inRange(gray_image, colorr_low, colorr_high)
-        mask2 = cv2.inRange(gray_image, colorf_low, colorf_high)
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-        mask1 = cv2.morphologyEx(mask1, cv2.MORPH_OPEN, kernel)
-        contours1, _ = cv2.findContours(mask1, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        mask2 = cv2.morphologyEx(mask2, cv2.MORPH_OPEN, kernel)
-        contours2, _ = cv2.findContours(mask2, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        cy1, cx1 = None, None
-        if len(contours1) > 0:
-            contours1 = sorted(contours1, key=cv2.contourArea, reverse=True)
-            cy1, cx1 = IP.get_contour_centroid(contours1[0])
-        # Check if contours2 is non-zero before calculating its centroid
-        cy2, cx2 = None, None
-        if len(contours2) > 0:
-            contours2 = sorted(contours2, key=cv2.contourArea, reverse=True)
-            cy2, cx2 = IP.get_contour_centroid(contours2[0])
-        if len(contours1) > 0 and len(contours2) > 0:
-            if cy1 > cy2:
-                return True
-            else:
-                return False
-
-    def near_edge(self):
-        print("near edge thread started")
-        while True:
-            image = self.camera2.get_image()
-            hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-            lower_red = (0, 50, 50)
-            upper_red = (10, 255, 255)
-            mask = cv2.inRange(hsv_image, lower_red, upper_red)
-            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5,5))
-            mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    
-            if (len(contours) > 0):
-                largest_contour = max(contours, key=cv2.contourArea)
-                rect = cv2.minAreaRect(largest_contour)
-                box = cv2.boxPoints(rect)
-                box = np.intp(box)
-    
-                height, width    = image.shape[:2]
-                bottom_threshold = 0.92 * height
-    
-                points_below_threshold = sum(point[1] >= bottom_threshold for point in box)
-                percentage_below_threshold = points_below_threshold / len(box)
-                if percentage_below_threshold >= 0.5 and cv2.contourArea(largest_contour) >= 200:
-                    self.nearEdge = True
-                else:
-                    self.nearEdge = False
-            else:
-                self.nearEdge = False
-
-    def walk(self):
-        normalized_x = self._get_normalized_opponent_x()
-        
-        desired_radius = self.SMALLEST_TURNING_RADIUS / normalized_x if abs(normalized_x) > 1e-3 else None
-
-        rotate_right = 0
-        if normalized_x > 0:
-            rotate_right = -1
-        else:
-            rotate_right = 1
-        
-        if (self.botVisible == False):
-            self.gait_manager.update_radius_calibration(0)
-            self.gait_manager.update_direction(-rotate_right)
-            self.gait_manager.command_to_motors(desired_radius=0, heading_angle=0)
-            return
+            #x, k, z, yaw = EllipsoidGaitGenerator.compute_leg_position(self, is_left = 'True', desired_radius=1e3, heading_angle=0)
+            #print('x=' + str(x))
             
-        # if (abs(normalized_x) > 0.7):
-        #     self.gait_manager.update_radius_calibration(0)
-        # else:
-        #     self.gait_manager.update_radius_calibration(0.93)
-        #     rotate_right = 1
-        self.gait_manager.update_radius_calibration(0.93)
-        self.gait_manager.update_direction(rotate_right)
-        self.library.play('Punch')
-        self.gait_manager.command_to_motors(desired_radius=desired_radius, heading_angle=self.heading_angle)
+            if(self.fall_detector.detect_fall()): 
+                self.fall = True
+            if 0.3 < t < 5:
+                self.start_sequence()
+            elif t > 5:
+            # else:
+                # self.fall
+                self.fall_detector.check()
+                
+                if(not self.fall):
+                    d = self.getDistance()
+                    if d == 1:
+                        print("boundary overflow")
+                        self.library.play('TurnLeft60')
+                    else:
+                        if (self.model_loaded == False):
+                            self.walk()
+                            return
+                        
+                        # print(f"area = {self.area}")
+                        if (self.area > 0.2):
+                            # print(f"area = {self.area}, shoving")
+                            self.library.play('Punch')
+                        else:
+                            self.walk()
+    
+    def getDistance(self):          #we use bottom oriented image for edge detection
+        import cv2
+        import numpy as np
+        image = self.camera2.get_image()
+        m = 0
+        hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        lower_red = (0, 50, 50)
+        upper_red = (10, 255, 255)
+        mask = cv2.inRange(hsv_image, lower_red, upper_red)
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+       
+        # print('len(image.getbands()):',len(image.getbands()))
+        # image_shape = image.shape
 
+# Get the number of channels from the shape tuple
+        # num_channels = image_shape[-1]
 
-    def _get_normalized_opponent_x(self):
-        return self.previousPosition
+        # print('num_channels:', num_channels)
+        
+        rgb_image = image[:, :, :3]
 
-    def yolo(self):
+# Get the shape of the RGB image
+        rgb_image_shape = rgb_image.shape
+
+# Get the number of channels from the shape tuple
+        num_channels = rgb_image_shape[-1]
+        
+        if len(contours) > 0:
+            largest_contour = max(contours, key=cv2.contourArea)
+            rect = cv2.minAreaRect(largest_contour)
+            box = cv2.boxPoints(rect)
+            box = np.int0(box)
+
+            image_height, image_width = image.shape[:2]
+            bottom_threshold = 0.92 * image_height
+            
+            for point in box:
+                x, y = point
+                if y >= bottom_threshold:
+                    print("Point:", point)
+                    print("Bottom Threshold:", bottom_threshold)
+
+            points_below_threshold = sum(point[1] >= bottom_threshold for point in box)
+            percentage_below_threshold = points_below_threshold / len(box)
+            
+            #if any(point[1] >= bottom_threshold for point in box):
+            cv2.drawContours(image, [box], 0, (0, 255, 0), 2)
+            print('percentage_below_threshold: ', percentage_below_threshold)
+            if percentage_below_threshold >= 0.5:    #print('point[1]: ', point)
+                if cv2.contourArea(largest_contour) >= 200:
+                    
+                    m=1
+        return m
+
+    
+    
+    def run_yolo(self):
+        # Load the YOLOv5 model
         model = torch.hub.load('yolov5/', 'custom', path='recent.pt', source='local')
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model.to(device).eval()
+        self.model_loaded = True
         
-        # Get reference image for triangulation
         reference_image = cv2.cvtColor(self.camera.get_image(), cv2.COLOR_BGR2RGB)
         boxes = model([reference_image]).xyxy[0]
-        
+
         while (len(boxes) == 0):
             boxes = model([reference_image]).xyxy[0]
         
-        self.modelLoaded = True
-
         x_size = boxes[0][2].item() - boxes[0][0].item()
         y_size = boxes[0][3].item() - boxes[0][1].item()
-        area = x_size * y_size  
+        area = x_size * y_size
         triangulation = Triangulation(2.0, 0.5, area)
-
-        print("yolo started")
-
-        while True: # run forever
+        # while True:
+        # Capture the image from the camera
+        while True:
             image = self.camera.get_image()
+
+            # Remove alpha channel if present
             if image.shape[2] == 4:
                 image = image[:, :, :3]
 
+            # Convert image to RGB format
             img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+            # Perform object detection
             results = model([img])
 
-            bounding_boxes = results.xyxy[0]
+            # Display the detections
 
-            if (len(bounding_boxes) == 0):
-                self.botVisible = False
-                continue
+            # Access individual detection attributes (e.g., bounding boxes, labels)
+            boxes = results.xyxy[0]#.numpy()
+            # labels = results.names[0]
 
-            self.botVisible = True
+            # Process the detection results as needed
+            if len(boxes) == 0:
+                self.is_bot_visible = False
+            #    self.library.play('TurnLeft60')
+            else:
+                self.is_bot_visible = True
+                
+            # print("Bot visible: " + str(self.is_bot_visible))
+            if self.is_bot_visible:
+                # print("Box: " + str(boxes))
+                # print("x = " + str((boxes[0][0].item()-80) / 80))
 
-            x_size = bounding_boxes[0][2].item() - bounding_boxes[0][0].item()
-            y_size = bounding_boxes[0][3].item() - bounding_boxes[0][1].item()
+                x_size = boxes[0][2].item() - boxes[0][0].item()
+                y_size = boxes[0][3].item() - boxes[0][1].item()
+                self.area = x_size * y_size / (120*160)
+                self.previousPosition = ((boxes[0][2].item()+boxes[0][0].item())/2-80)/80
 
-            self.previousPosition = ((bounding_boxes[0][2].item()+bounding_boxes[0][0].item())/2-80)/80
-            self.botDistance = triangulation.distance_to_camera(x_size * y_size)
-
+            # Sleep for a short duration to avoid excessive CPU usage
             time.sleep(0.1)
-
-    def red_slope(self):
-        image = self.camera2.get_image()
-        hsv_image = cv2.cvtColor(image,cv2.COLOR_BGR2HSV)
-        lower_red = np.array([0, 100, 100])
-        upper_red = np.array([10, 255, 255])
-
-        red_mask = cv2.inRange(hsv_image, lower_red, upper_red)
-
-        contours_red, _ = cv2.findContours(red_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        contours = sorted(contours_red, key=cv2.contourArea, reverse=True)[:1]
-        rotated_rect = None
-
-        if len(contours) > 0:
-            for contour in contours:
-                # Fit a rotated bounding rectangle around the contour
-                rotated_rect = cv2.minAreaRect(contour)
-                if(75 <= rotated_rect[2] <= 105):
-                    return 2  # move straight
-                elif(0 < rotated_rect[2] < 75):
-                    #self.gait_manager.update_direction(-1, 1)
-                    return 1  # move in anticlockwise direction
-                else:
-                    #self.gait_manager.update_direction(1, -1)
-                    return 0  # move in clockwise direction
+    
+    
+    
+  
+    def start_sequence(self):
+        """At the beginning of the match, the robot walks forwards to move away from the edges."""
+        self.gait_manager.command_to_motors(heading_angle=0)
+        
+    
+    
+    def walk(self):
+        normalized_x = self.previousPosition
+        desired_radius = (self.SMALLEST_TURNING_RADIUS / normalized_x) if abs(normalized_x) > 1e-3 else None
+        
+        if (self.is_bot_visible == False):
+            # print("not visible")
+            self.heading_angle = -abs(self.previousPosition) * (3.14 / 3)
+            self.counter = 0
+            self.gait_manager.command_to_motors(desired_radius=desired_radius/2, heading_angle=self.heading_angle)
+            return  
+        
+        if(normalized_x > 0.7): 
+            self.heading_angle = 3.14/4
+            self.counter = 0;  
+        elif(normalized_x < -0.7): 
+            self.heading_angle = -(3.14/4)
+            self.counter = 0
         else:
-            return -1  # Return a code to indicate no contour found
+            self.heading_angle = 0
+            self.counter = 0
+        # if (abs(normalized_x) > 0.5):
+        #     self.gait_manager.update_radius_calibration(0)
+        # else:
+        #     self.gait_manager.update_radius_calibration(0.93)
+        self.counter += 1
+        # print(f"turning with radius {desired_radius}, angle {self.heading_angle}")
+        self.gait_manager.command_to_motors(desired_radius=desired_radius/2, heading_angle=self.heading_angle)
+        #self.library.play('Khushi')
 
+    def _get_normalized_opponent_x(self):
+        """Locate the opponent in the image and return its horizontal position in the range [-1, 1]."""
+        img = self.camera.get_image()
+        _, _, horizontal_coordinate = IP.locate_opponent(img)
+        if horizontal_coordinate is None:
+            return 0
+        
+        normalized = horizontal_coordinate * 2 / img.shape[1] - 1
+
+        return normalized
+
+# create the Robot instance and run main loop
 wrestler = Sultaan()
 wrestler.run()
