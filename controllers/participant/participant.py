@@ -68,6 +68,10 @@ class Sultaan (Robot):
             if 0.3 < t < 2:
                 self.start_sequence()
             elif t > 2:
+                d = self.getDistance()
+                if d == 1:
+                    print("boundary overflow")
+                    self.library.play('TurnLeft60')
                 self.fall_detector.check()
                 if(not self.fall):
                     self.walk()
@@ -75,6 +79,62 @@ class Sultaan (Robot):
     def start_sequence(self):
         """At the beginning of the match, the robot walks forwards to move away from the edges."""
         self.gait_manager.command_to_motors(heading_angle=0)
+
+
+    
+    def getDistance(self):          #we use bottom oriented image for edge detection
+        import cv2
+        import numpy as np
+        image = self.camera2.get_image()
+        m = 0
+        hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        lower_red = (0, 50, 50)
+        upper_red = (10, 255, 255)
+        mask = cv2.inRange(hsv_image, lower_red, upper_red)
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+       
+        # print('len(image.getbands()):',len(image.getbands()))
+        # image_shape = image.shape
+
+# Get the number of channels from the shape tuple
+        # num_channels = image_shape[-1]
+
+        # print('num_channels:', num_channels)
+        
+        rgb_image = image[:, :, :3]
+
+# Get the shape of the RGB image
+        rgb_image_shape = rgb_image.shape
+
+# Get the number of channels from the shape tuple
+        num_channels = rgb_image_shape[-1]
+        
+        if len(contours) > 0:
+            largest_contour = max(contours, key=cv2.contourArea)
+            rect = cv2.minAreaRect(largest_contour)
+            box = cv2.boxPoints(rect)
+            box = np.intp(box)
+
+            image_height, image_width = image.shape[:2]
+            bottom_threshold = 0.92 * image_height
+            
+            for point in box:
+                x, y = point
+
+            points_below_threshold = sum(point[1] >= bottom_threshold for point in box)
+            percentage_below_threshold = points_below_threshold / len(box)
+            
+            #if any(point[1] >= bottom_threshold for point in box):
+            cv2.drawContours(image, [box], 0, (0, 255, 0), 2)
+            if percentage_below_threshold >= 0.5:    #print('point[1]: ', point)
+                if cv2.contourArea(largest_contour) >= 200:
+                    
+                    m=1
+        return m
+
+    
 
     def walk(self):
         normalized_x = self._get_normalized_opponent_x() 
