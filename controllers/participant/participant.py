@@ -21,9 +21,9 @@ import time
 import threading
 
 class Sultaan (Robot):
-    SMALLEST_TURNING_RADIUS = 0 #0.1
+    SMALLEST_TURNING_RADIUS = 0.1 #0.1
     SAFE_ZONE = 0.75
-    TIME_BEFORE_DIRECTION_CHANGE = 60   # 80
+    TIME_BEFORE_DIRECTION_CHANGE = 80   # 80
     k=0
     is_bot_visible = True
     
@@ -40,7 +40,7 @@ class Sultaan (Robot):
         self.gait_manager = GaitManager(self, self.time_step)
         self.heading_angle = 3.14 / 2
         self.counter = 0
-        self.library.add('Shove', './Shove.motion', loop = False)
+        self.library.add('Shove', './khushi.motion', loop = False)
         self.library.add('Punch', './khushi.motion', loop = False)
         self.leds = {
             'rightf': self.getDevice('Face/Led/Right'), 
