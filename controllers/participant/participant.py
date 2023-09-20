@@ -23,7 +23,7 @@ import threading
 class Sultaan (Robot):
     SMALLEST_TURNING_RADIUS = 0.1 #0.1
     SAFE_ZONE = 0.75
-    TIME_BEFORE_DIRECTION_CHANGE = 200   # 80
+    TIME_BEFORE_DIRECTION_CHANGE = 100   # 80
     k=0
     is_bot_visible = True
     
@@ -80,9 +80,9 @@ class Sultaan (Robot):
             
             if(self.fall_detector.detect_fall()): 
                 self.fall = True
-            if 0.3 < t < 5:
+            if 0.3 < t < 4:
                 self.start_sequence()
-            elif t > 5:
+            elif t > 4:
                 self.fall_detector.check()
                 
                 d = self.getDistance()
