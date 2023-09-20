@@ -90,7 +90,7 @@ class Sultaan (Robot):
                     print("boundary overflow")
                     self.library.play('TurnLeft60')
                 else:
-                    if (self.area > 0.01):
+                    if (self.area > 0.2):
                         self.library.play('Punch')
                     else:
                         self.walk()
@@ -241,7 +241,7 @@ class Sultaan (Robot):
         self.counter += 1
         # print(f"turning with radius {desired_radius}, angle {self.heading_angle}")
         self.gait_manager.command_to_motors(desired_radius=desired_radius/2, heading_angle=self.heading_angle)
-        #self.library.play('Khushi')
+        self.library.play('Punch')
 
     def _get_normalized_opponent_x(self):
         """Locate the opponent in the image and return its horizontal position in the range [-1, 1]."""
