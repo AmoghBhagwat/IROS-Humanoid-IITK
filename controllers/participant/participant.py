@@ -241,7 +241,8 @@ class Sultaan (Robot):
         self.counter += 1
         # print(f"turning with radius {desired_radius}, angle {self.heading_angle}")
         self.gait_manager.command_to_motors(desired_radius=desired_radius/2, heading_angle=self.heading_angle)
-        self.library.play('Punch')
+        if self.fall == False:
+            self.library.play('Punch')
 
     def _get_normalized_opponent_x(self):
         """Locate the opponent in the image and return its horizontal position in the range [-1, 1]."""
