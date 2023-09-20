@@ -90,7 +90,7 @@ class Sultaan (Robot):
                     print("boundary overflow")
                     self.library.play('TurnLeft60')
                 else:
-                    if (self.area > 0.2):
+                    if (self.area > 0.01):
                         self.library.play('Punch')
                     else:
                         self.walk()
