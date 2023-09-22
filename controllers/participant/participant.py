@@ -21,7 +21,7 @@ import time
 import threading
 
 class Sultaan (Robot):
-    SMALLEST_TURNING_RADIUS = 0 #0.1
+    SMALLEST_TURNING_RADIUS = 0.1 #0.1
     SAFE_ZONE = 0.75
     TIME_BEFORE_DIRECTION_CHANGE = 60   # 80
     k=0
