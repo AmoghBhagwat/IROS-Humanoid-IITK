@@ -80,9 +80,9 @@ class Sultaan (Robot):
             
             if(self.fall_detector.detect_fall()): 
                 self.fall = True
-            if 0.3 < t < 4:
+            if 0.3 < t < 6:
                 self.start_sequence()
-            elif t > 4:
+            elif t > 6:
                 self.fall_detector.check()
                 
                 d = self.getDistance()
