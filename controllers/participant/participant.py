@@ -84,9 +84,9 @@ class Sultaan (Robot):
 
             t = self.getTime()
             self.gait_manager.update_theta()
-            if 0.3 < t < 15:
+            if 0.3 < t < 8:
                 self.start_sequence()
-            elif t > 15:
+            elif t > 8:
                 self.fall_detector.check()
                 self.library.play('Khushi2')
                 self.walk()
@@ -94,8 +94,8 @@ class Sultaan (Robot):
 
     def start_sequence(self):
         """At the beginning of the match, the robot walks forwards to move away from the edges."""
-        if self.getTime() < 10:
-            self.gait_manager.command_to_motors(heading_angle=3.14/2)
+        if self.getTime() < 3:
+            self.library.play('TurnLeft40')
         else:
             self.gait_manager.command_to_motors(heading_angle=0)
 
