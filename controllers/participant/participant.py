@@ -94,7 +94,7 @@ class Sultaan (Robot):
 
     def start_sequence(self):
         """At the beginning of the match, the robot walks forwards to move away from the edges."""
-        self.gait_manager.command_to_motors(desired_radius=1e-3, heading_angle=3.14/2)
+        self.gait_manager.command_to_motors(desired_radius=1000, heading_angle=3.14/2)
 
     def foot_sensor(self):
         return self.rl.getValue() + self.rr.getValue() + self.lr.getValue() + self.ll.getValue()
