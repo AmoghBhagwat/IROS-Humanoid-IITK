@@ -203,10 +203,14 @@ class Sultaan (Robot):
 
         self.library.play('Khushi2')
         angle = 0
-        if abs(normalized_x) > 0.6:
-            angle = 3.14 / 5 
-        
-        self.gait_manager.command_to_motors(desired_radius=0, heading_angle=angle)
+        if normalized_x > 0:
+            angle = 3.14 / 4
+        elif normalized_x < 0:
+            angle = -3.14/4
+        else:
+            return
+            
+        self.gait_manager.command_to_motors(desired_radius=desired_radius, heading_angle=angle)
 
 
     def _get_normalized_opponent_x(self):
