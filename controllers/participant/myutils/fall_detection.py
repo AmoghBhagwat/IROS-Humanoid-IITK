@@ -83,12 +83,10 @@ class FallDetection:
             self.fsm.transition_to('NO_FALL')
 
     def front_fall(self):
-        self.library.stop('Khushi2')
         self.current_motion.set(self.library.get('GetUpFront'))
         self.fsm.transition_to('BLOCKING_MOTION')
 
     def back_fall(self):
-        self.library.stop('Khushi2')
         self.current_motion.set(self.library.get('GetUpBack'))
         self.fsm.transition_to('BLOCKING_MOTION')
 
