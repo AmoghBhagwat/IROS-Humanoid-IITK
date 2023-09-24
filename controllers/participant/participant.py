@@ -88,12 +88,12 @@ class Sultaan (Robot):
                 self.start_sequence()
             elif t > 6:
                 self.fall_detector.check()
-                self.library.play('Khushi2')
                 self.walk()
                 
 
     def start_sequence(self):
         """At the beginning of the match, the robot walks forwards to move away from the edges."""
+        self.library.play('Khushi2')
         self.gait_manager.command_to_motors(heading_angle=0)
 
     def foot_sensor(self):
@@ -183,7 +183,8 @@ class Sultaan (Robot):
             return
         else:
             self.gait_manager.update_radius_calibration(0.93)    
-        
+
+        self.library.play('Khushi2')
         angle = 0
         if abs(normalized_x) > 0.6:
             angle = 3.14 / 5 
