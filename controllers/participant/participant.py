@@ -64,6 +64,22 @@ class Sultaan (Robot):
         self.ll.enable(self.time_step)
         self.lr.enable(self.time_step)
 
+        # for locking motor
+        joints = ['HipYawPitch', 'HipRoll', 'HipPitch', 'KneePitch', 'AnklePitch', 'AnkleRoll']
+        self.L_leg_motors = []
+        for joint in joints:
+            motor = self.getDevice(f'L{joint}')
+            position_sensor = motor.getPositionSensor()
+            position_sensor.enable(1)
+            self.L_leg_motors.append(motor)
+
+        self.R_leg_motors = []
+        for joint in joints:
+            motor = self.getDevice(f'R{joint}')
+            position_sensor = motor.getPositionSensor()
+            position_sensor.enable(1)
+            self.R_leg_motors.append(motor)
+
         self.botVisible = True
         self.area = 0
         self.previousPosition = 0
