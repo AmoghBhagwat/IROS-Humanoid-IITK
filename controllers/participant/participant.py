@@ -33,6 +33,7 @@ class Sultaan (Robot):
         self.library.add('Shove', './Shove.motion', loop = False)
         self.library.add('Punch', './Punch.motion', loop = False)
         self.library.add('Khushi2', './Khushi2.motion', loop = False)
+        self.library.add('First', './First.motion', loop = False)
 
         self.camera = Camera(self)
         self.camera2 = Camera2(self)
@@ -110,7 +111,7 @@ class Sultaan (Robot):
 
     def start_sequence(self):
         """At the beginning of the match, the robot walks forwards to move away from the edges."""
-        self.library.play('Khushi2')
+        self.library.play('First')
         self.gait_manager.command_to_motors(heading_angle=0)
 
     def foot_sensor(self):
@@ -201,7 +202,7 @@ class Sultaan (Robot):
         else:
             self.gait_manager.update_radius_calibration(0.93)    
 
-        self.library.play('Khushi2')
+        self.library.play('First')
         angle = 0
         if abs(normalized_x) > 0.6:
             angle = 3.14 / 5 

@@ -47,4 +47,5 @@ class MotionLibrary:
         self.motions[name].play()
 
     def stop(self, name):
+
         self.motions[name].stop()
