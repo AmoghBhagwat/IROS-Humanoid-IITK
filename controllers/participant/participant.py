@@ -171,15 +171,16 @@ class Sultaan (Robot):
         normalized_x = self._get_normalized_opponent_x()
         
         desired_radius = abs(self.SMALLEST_TURNING_RADIUS / normalized_x) if abs(normalized_x) > 1e-3 else None
-        
-        if (self.botVisible == False):
+
+        if self.near_edge():
+            self.gait_manager.update_radius_calibration(0)
             self.gait_manager.command_to_motors(desired_radius=0, heading_angle=0)
             return
             
-        if self.near_edge():
-            self.library.play('TurnLeft60')
-            
+        if (self.botVisible == False):
+            self.gait_manager.command_to_motors(desired_radius=0, heading_angle=0)
             return
+
         else:
             self.gait_manager.update_radius_calibration(0.93)    
 
