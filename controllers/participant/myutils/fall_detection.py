@@ -40,6 +40,10 @@ class FallDetection:
         # Shoulder roll motors to recover from a side fall
         self.RShoulderRoll = robot.getDevice('RShoulderRoll')
         self.LShoulderRoll = robot.getDevice('LShoulderRoll')
+        self.RShoulderPitch = robot.getDevice('RShoulderPitch')
+        self.LShoulderPitch = robot.getDevice('LShoulderPitch')
+        self.LElbowYaw = robot.getDevice('LElbowYaw')
+        self.RElbowYaw = robot.getDevice('RElbowYaw')
         self.current_motion = CurrentMotionManager()
         self.library = MotionLibrary()
 
