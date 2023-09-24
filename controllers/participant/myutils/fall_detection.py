@@ -62,6 +62,10 @@ class FallDetection:
             self.fsm.transition_to('FRONT_FALL')
             fall = True
         elif acc_x > 7:
+            self.RShoulderPitch.setPosition(1.7)
+            self.LShoulderPitch.setPosition(1.7)
+            self.RElbowYaw.setPosition(1.8)
+            self.LElbowYaw.setPosition(-1.8)
             self.fsm.transition_to('BACK_FALL')
             fall = True
         if acc_y < -7:
@@ -87,7 +91,7 @@ class FallDetection:
         self.fsm.transition_to('BLOCKING_MOTION')
 
     def back_fall(self):
-        self.current_motion.set(self.library.get('First'))
+        self.current_motion.set(self.library.get('GetUpBack'))
         self.fsm.transition_to('BLOCKING_MOTION')
 
     def wait(self):
