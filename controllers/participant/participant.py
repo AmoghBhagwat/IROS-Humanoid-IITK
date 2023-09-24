@@ -84,9 +84,9 @@ class Sultaan (Robot):
 
             t = self.getTime()
             self.gait_manager.update_theta()
-            if 0.3 < t < 12:
+            if 0.3 < t < 6:
                 self.start_sequence()
-            elif t > 8:
+            elif t > 6:
                 self.fall_detector.check()
                 self.library.play('Khushi2')
                 self.walk()
@@ -94,10 +94,7 @@ class Sultaan (Robot):
 
     def start_sequence(self):
         """At the beginning of the match, the robot walks forwards to move away from the edges."""
-        if self.getTime() < 4:
-            self.library.play('TurnLeft40')
-        else:
-            self.gait_manager.command_to_motors(heading_angle=0)
+        self.gait_manager.command_to_motors(heading_angle=0)
 
     def foot_sensor(self):
         return self.rl.getValue() + self.rr.getValue() + self.lr.getValue() + self.ll.getValue()
@@ -176,7 +173,6 @@ class Sultaan (Robot):
         desired_radius = abs(self.SMALLEST_TURNING_RADIUS / normalized_x) if abs(normalized_x) > 1e-3 else None
         
         if (self.botVisible == False):
-            self.gait_manager.update_radius_calibration(0)
             self.gait_manager.command_to_motors(desired_radius=0, heading_angle=0)
             return
             
@@ -242,7 +238,7 @@ class Sultaan (Robot):
                 continue
             
             counter += 1
-            if (counter < 15):
+            if (counter < 10):
                 self.botVisible = False
                 continue
 
