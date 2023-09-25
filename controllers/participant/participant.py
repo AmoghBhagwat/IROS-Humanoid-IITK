@@ -206,7 +206,7 @@ class Sultaan (Robot):
         
         if (self.botVisible == False):
             # print("bot not visible")
-            self.library.play('kinchit')
+            # self.library.play('kinchit')
             self.gait_manager.command_to_motors(desired_radius=0, heading_angle=0)
             return
 
