@@ -198,11 +198,11 @@ class Sultaan (Robot):
         desired_radius = abs(self.SMALLEST_TURNING_RADIUS / normalized_x) if abs(normalized_x) > 1e-3 else None
 
         if self.near_edge():
-            counter += 1
+            self.turn_counter += 1
         else:
-            counter = 0
+            self.turn_counter = 0
 
-        if counter > 10:
+        if self.turn_counter > 10:
             # print("near edge")
             self.library.play('TurnLeft60')
             return
