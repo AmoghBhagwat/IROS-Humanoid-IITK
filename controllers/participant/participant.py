@@ -186,7 +186,7 @@ class Sultaan (Robot):
 
             points_below_threshold = sum(point[1] >= bottom_threshold for point in box)
             percentage_below_threshold = points_below_threshold / len(box)
-            if percentage_below_threshold >= 0.5 and cv2.contourArea(largest_contour) >= 200:
+            if percentage_below_threshold >= 0.5 and cv2.contourArea(largest_contour) >= 180:
                 return True
             
         return False
