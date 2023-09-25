@@ -1,6 +1,8 @@
 {
   "name": "Team Humanoid, IITK",
-  "description": "Controller",
+  "description": "Description of my robot controller program.",
+  "team": [ "Abhishek Srivastava", "Adwik Gupta", "Agam Pipersenia", "Amogh Bhagwat", "Hardik Jindal", "Kinchit Goyal", "Pratyush Gupta", "Vaneesha Kumar", "Aadvik Kumar", "Ankit Kumar", "Divyansh Mittal" ],
+  "organization": "Indian Institute of Technology, Kanpur",
   "country": "IN",
   "programming": "Python"
 }
