@@ -1,5 +1,5 @@
 #WEBOTS_MOTION,V1.0,LShoulderRoll,LElbowRoll,LShoulderPitch,RShoulderRoll,RElbowRoll,RShoulderPitch
-00:00:000,Pose1,0.3,-1.3,0.8,-0.3,1.3
+00:00:000,Pose1,0.3,-1.3,0.8,-0.3,1.3,0.8
 00:00:080,Pose1,0.3,-1.3,0.8,-0.3,1.3,0.8
 00:00:160,Pose1,0.3,-1.3,-0,-0.3,1.3,0.8
 00:00:240,Pose1,0.3,-1.3,-0.2,-0.3,1.3,0.8
