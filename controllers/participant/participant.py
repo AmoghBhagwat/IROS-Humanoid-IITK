@@ -198,8 +198,7 @@ class Sultaan (Robot):
 
         if self.near_edge():
             # print("near edge")
-            self.gait_manager.update_radius_calibration(0)
-            self.gait_manager.command_to_motors(desired_radius=0, heading_angle=0)
+            self.library.play('TurnLeft60')
             return
             
         self.gait_manager.update_radius_calibration(0.93)    
