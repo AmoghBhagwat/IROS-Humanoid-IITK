@@ -32,7 +32,7 @@ class Sultaan (Robot):
         self.library = MotionLibrary()
         self.library.add('Shove', './Shove.motion', loop = False)
         self.library.add('Punch', './Punch.motion', loop = False)
-        self.library.add('Khushi2', './Khushi2.motion', loop = False)
+        self.library.add('Khushi2', './New.motion', loop = False)
         # self.library.add('First', './First.motion', loop = False)
         self.library.add('kinchit', './kinchit.motion', loop = False)
 
