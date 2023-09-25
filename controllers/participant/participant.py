@@ -108,9 +108,9 @@ class Sultaan (Robot):
             t = self.getTime()
             self.gait_manager.update_theta()
             
-            if 0.3 < t < 5:
+            if 0.3 < t < 4:
                 self.start_sequence()
-            elif t > 5:
+            elif t > 4:
                 self.fall_detector.check()
                 self.walk()
                 
@@ -236,19 +236,7 @@ class Sultaan (Robot):
         model.to(device).eval()
         self.model_loaded = True
         
-        # Get reference image for triangulation
-        reference_image = cv2.cvtColor(self.camera.get_image(), cv2.COLOR_BGR2RGB)
-        boxes = model([reference_image]).xyxy[0]
-        
-        self.use_area = False
-
-        while (len(boxes) == 0):
-            print("still finding reference image")
-            boxes = model([reference_image]).xyxy[0]
-            if (self.getTime() > 5):
-                print("could not find image, quitting")
-                self.use_area = True
-                break
+        self.use_area = True
         
         if not self.use_area:
             x_size = boxes[0][2].item() - boxes[0][0].item()
