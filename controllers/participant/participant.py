@@ -43,6 +43,7 @@ class Sultaan (Robot):
         self.heading_angle = 0
         # Time before changing direction to stop the robot from falling off the ring
         self.counter = 0
+        self.turn_counter = 0
         
         self.leds = {
             'rightf': self.getDevice('Face/Led/Right'), 
@@ -197,6 +198,11 @@ class Sultaan (Robot):
         desired_radius = abs(self.SMALLEST_TURNING_RADIUS / normalized_x) if abs(normalized_x) > 1e-3 else None
 
         if self.near_edge():
+            counter += 1
+        else:
+            counter = 0
+
+        if counter > 10:
             # print("near edge")
             self.library.play('TurnLeft60')
             return
