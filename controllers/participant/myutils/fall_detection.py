@@ -46,6 +46,7 @@ class FallDetection:
         self.RElbowYaw = robot.getDevice('RElbowYaw')
         self.current_motion = CurrentMotionManager()
         self.library = motion
+        self.transitions = 0
 
     def check(self):
         '''Check if the robot has fallen.
@@ -89,6 +90,7 @@ class FallDetection:
     def pending(self):
         '''Wait for the current motion to finish before going back to NO_FALL.'''
         if self.current_motion.is_over():
+            self.transitions += 1
             self.current_motion.set(self.library.get('kinchit'))
             self.fsm.transition_to('NO_FALL')
 
@@ -103,3 +105,6 @@ class FallDetection:
 
     def wait(self):
         pass
+
+    def get_transitions(self):
+        return self.transitions
