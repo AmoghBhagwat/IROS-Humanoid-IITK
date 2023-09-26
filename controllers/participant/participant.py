@@ -113,9 +113,10 @@ class Sultaan (Robot):
                 self.start_sequence()
             elif t > 2:
                 if self.fall_detector.check():
-                    print("not fallen")
+                    if (t % 1000 == 0):
+                        print("not fallen")
                     self.walk()
-                else:
+                elif t % 1000 == 0:
                     print("fallen")
                 
 
