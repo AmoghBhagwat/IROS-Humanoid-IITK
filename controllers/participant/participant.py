@@ -112,8 +112,8 @@ class Sultaan (Robot):
             if 0.3 < t < 2:
                 self.start_sequence()
             elif t > 2:
-                self.fall_detector.check()
-                self.walk()
+                if self.fall_detector.check():
+                    self.walk()
                 
 
     def start_sequence(self):
