@@ -229,7 +229,7 @@ class Sultaan (Robot):
         return self.previousPosition
 
     def yolo(self):
-        model = torch.hub.load('yolov5/', 'custom', path='recent.pt', source='local')
+        model = torch.hub.load('yolov5/', 'custom', path='recent.pt', source='local', force_reload=True)
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model.to(device).eval()
         self.model_loaded = True
