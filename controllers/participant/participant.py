@@ -113,11 +113,7 @@ class Sultaan (Robot):
                 self.start_sequence()
             elif t > 2:
                 if self.fall_detector.check():
-                    if (t % 1000 == 0):
-                        print("not fallen")
                     self.walk()
-                elif t % 1000 == 0:
-                    print("fallen")
                 
 
     def start_sequence(self):
@@ -198,7 +194,6 @@ class Sultaan (Robot):
 
     def walk(self):
         normalized_x = self._get_normalized_opponent_x()
-        
         desired_radius = abs(self.SMALLEST_TURNING_RADIUS / normalized_x) if abs(normalized_x) > 1e-3 else None
 
         if self.near_edge():
@@ -211,8 +206,6 @@ class Sultaan (Robot):
             self.library.play('TurnLeft60')
             return
             
-        self.gait_manager.update_radius_calibration(0.93)    
-        
         if (self.botVisible == False):
             # print("bot not visible")
             self.library.play('kinchit')
@@ -221,19 +214,16 @@ class Sultaan (Robot):
 
         # print(f"normalized x = {normalized_x}")
         self.library.play('Khushi2')
-        angle = 0
-        if abs(normalized_x) > 0.6:
-            angle = 3.14 / 5
-        
-        if desired_radius == None:
-            rad = None
-        else:
-            if normalized_x > 0:
-                rad = desired_radius
-            else:
-                rad = -desired_radius
+        if(normalized_x > 0): 
+            heading_angle = 3.14/4
+            self.counter = 0;  
+        elif(normalized_x < 0): 
+            heading_angle = -(3.14/4)
+            self.counter = 0 
+        elif(normalized_x == 0): 
+            return  
 
-        self.gait_manager.command_to_motors(desired_radius=rad, heading_angle=angle)
+        self.gait_manager.command_to_motors(desired_radius=desired_radius, heading_angle=heading_angle)
 
 
     def _get_normalized_opponent_x(self):
