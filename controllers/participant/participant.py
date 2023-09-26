@@ -220,9 +220,7 @@ class Sultaan (Robot):
         elif(normalized_x < 0): 
             heading_angle = -(3.14/4)
             self.counter = 0 
-        elif(normalized_x == 0): 
-            return  
-
+        
         self.gait_manager.command_to_motors(desired_radius=desired_radius, heading_angle=heading_angle)
 
 
