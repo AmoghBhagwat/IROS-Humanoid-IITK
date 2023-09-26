@@ -38,7 +38,7 @@ class Sultaan (Robot):
 
         self.camera = Camera(self)
         self.camera2 = Camera2(self)
-        self.fall_detector = FallDetection(self.time_step, self)
+        self.fall_detector = FallDetection(self.time_step, self, self.library)
         self.gait_manager = GaitManager(self, self.time_step)
         self.heading_angle = 0
         # Time before changing direction to stop the robot from falling off the ring

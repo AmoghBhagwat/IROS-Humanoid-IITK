@@ -21,7 +21,7 @@ from .current_motion_manager import CurrentMotionManager
 
 
 class FallDetection:
-    def __init__(self, time_step, robot):
+    def __init__(self, time_step, robot, motion):
         self.time_step = time_step
         self.robot = robot
         # the Finite State Machine (FSM) is a way of representing a robot's behavior as a sequence of states
@@ -45,7 +45,7 @@ class FallDetection:
         self.LElbowYaw = robot.getDevice('LElbowYaw')
         self.RElbowYaw = robot.getDevice('RElbowYaw')
         self.current_motion = CurrentMotionManager()
-        self.library = MotionLibrary()
+        self.library = motion
 
     def check(self):
         '''Check if the robot has fallen.
@@ -87,7 +87,7 @@ class FallDetection:
     def pending(self):
         '''Wait for the current motion to finish before going back to NO_FALL.'''
         if self.current_motion.is_over():
-            self.current_motion.set(self.library.get('Stand'))
+            self.current_motion.set(self.library.get('kinchit'))
             self.fsm.transition_to('NO_FALL')
 
     def front_fall(self):
