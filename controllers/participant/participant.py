@@ -23,7 +23,7 @@ import threading
 class Sultaan (Robot):
     SMALLEST_TURNING_RADIUS = 0.1
     SAFE_ZONE = 0.75
-    TIME_BEFORE_DIRECTION_CHANGE = 200  # 8000 ms /. 40 msp
+    TIME_BEFORE_DIRECTION_CHANGE = 80  # 8000 ms /. 40 msp
 
     def __init__(self):
         Robot.__init__(self)
@@ -44,7 +44,7 @@ class Sultaan (Robot):
         # Time before changing direction to stop the robot from falling off the ring
         self.counter = 0
         self.turn_counter = 0
-        
+        self.heading_angle = 3.14/2
         self.leds = {
             'rightf': self.getDevice('Face/Led/Right'), 
             'leftf': self.getDevice('Face/Led/Left'), 
@@ -224,8 +224,8 @@ class Sultaan (Robot):
         elif(normalized_x < 0): 
             heading_angle = -(3.14/4)
             self.counter = 0 
-        
-        self.gait_manager.command_to_motors(desired_radius=desired_radius, heading_angle=heading_angle)
+        self.counter+=1
+        self.gait_manager.command_to_motors(desired_radius=desired_radius, heading_angle=self.heading_angle)
 
 
     def _get_normalized_opponent_x(self):
