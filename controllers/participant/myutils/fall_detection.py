@@ -92,6 +92,7 @@ class FallDetection:
 
     def front_fall(self):
         self.current_motion.set(self.library.get('GetUpFront'))
+        self.library.play('TurnLeft20')
         self.fsm.transition_to('BLOCKING_MOTION')
 
     def back_fall(self):
