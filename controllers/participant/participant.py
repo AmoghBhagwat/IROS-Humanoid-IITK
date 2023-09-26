@@ -52,6 +52,11 @@ class Sultaan (Robot):
             'chest': self.getDevice('ChestBoard/Led'), 
         }
 
+        self.RShoulderPitch = self.getDevice('RShoulderPitch')
+        self.LShoulderPitch = self.getDevice('LShoulderPitch')
+        self.LElbowYaw = self.getDevice('LElbowYaw')
+        self.RElbowYaw = self.getDevice('RElbowYaw')
+
         self.head_pitch = self.getDevice("HeadPitch")
         self.right_foot_sensor = self.getDevice('RFsr')
         self.right_foot_sensor.enable(self.time_step)
@@ -192,23 +197,34 @@ class Sultaan (Robot):
         desired_radius = abs(self.SMALLEST_TURNING_RADIUS / normalized_x) if abs(normalized_x) > 1e-3 else None
 
         if self.near_edge():
+            # print("near edge")
             self.gait_manager.update_radius_calibration(0)
             self.gait_manager.command_to_motors(desired_radius=0, heading_angle=0)
             return
             
+        self.gait_manager.update_radius_calibration(0.93)    
+        
         if (self.botVisible == False):
+            # print("bot not visible")
+            self.library.play('kinchit')
             self.gait_manager.command_to_motors(desired_radius=0, heading_angle=0)
             return
 
-        else:
-            self.gait_manager.update_radius_calibration(0.93)    
-
+        # print(f"normalized x = {normalized_x}")
         self.library.play('Khushi2')
         angle = 0
         if abs(normalized_x) > 0.6:
-            angle = 3.14 / 5 
-            
-        self.gait_manager.command_to_motors(desired_radius=desired_radius, heading_angle=angle)
+            angle = 3.14 / 5
+        
+        if desired_radius == None:
+            rad = None
+        else:
+            if normalized_x > 0:
+                rad = desired_radius
+            else:
+                rad = -desired_radius
+
+        self.gait_manager.command_to_motors(desired_radius=rad, heading_angle=angle)
 
 
     def _get_normalized_opponent_x(self):
