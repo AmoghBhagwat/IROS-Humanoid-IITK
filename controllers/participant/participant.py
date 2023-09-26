@@ -193,6 +193,9 @@ class Sultaan (Robot):
         return False
 
     def walk(self):
+        if self.fall_detector.get_transitions() > 4:
+            return
+        
         normalized_x = self._get_normalized_opponent_x()
         desired_radius = abs(self.SMALLEST_TURNING_RADIUS / normalized_x) if abs(normalized_x) > 1e-3 else None
 
