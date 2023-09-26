@@ -26,7 +26,7 @@ RUN pip3 install --upgrade pip && \
     setuptools
 RUN pip3 install --upgrade setuptools
 
-# Environment variables needed for Webots
+# Environment variables needed for Weboits
 # https://cyberbotics.com/doc/guide/running-extern-robot-controllers#remote-extern-controllers
 ENV PYTHONPATH=${WEBOTS_HOME}/lib/controller/python
 ENV PYTHONIOENCODING=UTF-8
