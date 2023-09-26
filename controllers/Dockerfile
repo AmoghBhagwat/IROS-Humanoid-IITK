@@ -23,7 +23,8 @@ RUN pip3 install --upgrade pip && \
     ultralytics \
     pandas \
     seaborn \
-    setuptools
+    setuptools \ 
+    scikit-learn
 RUN pip3 install --upgrade setuptools
 
 # Environment variables needed for Weboits
