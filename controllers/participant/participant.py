@@ -23,7 +23,7 @@ import threading
 class Sultaan (Robot):
     SMALLEST_TURNING_RADIUS = 0.1
     SAFE_ZONE = 0.75
-    TIME_BEFORE_DIRECTION_CHANGE = 200  # 8000 ms /. 40 msp
+    TIME_BEFORE_DIRECTION_CHANGE = 200  # 8000 ms / 40 ms
 
     def __init__(self):
         Robot.__init__(self)
@@ -43,7 +43,6 @@ class Sultaan (Robot):
         self.heading_angle = 0
         # Time before changing direction to stop the robot from falling off the ring
         self.counter = 0
-        self.turn_counter = 0
         
         self.leds = {
             'rightf': self.getDevice('Face/Led/Right'), 
@@ -52,11 +51,6 @@ class Sultaan (Robot):
             'lefte': self.getDevice('Ears/Led/Left'), 
             'chest': self.getDevice('ChestBoard/Led'), 
         }
-
-        self.RShoulderPitch = self.getDevice('RShoulderPitch')
-        self.LShoulderPitch = self.getDevice('LShoulderPitch')
-        self.LElbowYaw = self.getDevice('LElbowYaw')
-        self.RElbowYaw = self.getDevice('RElbowYaw')
 
         self.head_pitch = self.getDevice("HeadPitch")
         self.right_foot_sensor = self.getDevice('RFsr')
@@ -73,20 +67,20 @@ class Sultaan (Robot):
         self.lr.enable(self.time_step)
 
         # for locking motor
-        # joints = ['HipYawPitch', 'HipRoll', 'HipPitch', 'KneePitch', 'AnklePitch', 'AnkleRoll']
-        # self.L_leg_motors = []
-        # for joint in joints:
-        #     motor = self.getDevice(f'L{joint}')
-        #     position_sensor = motor.getPositionSensor()
-        #     position_sensor.enable(1)
-        #     self.L_leg_motors.append(motor)
+        joints = ['HipYawPitch', 'HipRoll', 'HipPitch', 'KneePitch', 'AnklePitch', 'AnkleRoll']
+        self.L_leg_motors = []
+        for joint in joints:
+            motor = self.getDevice(f'L{joint}')
+            position_sensor = motor.getPositionSensor()
+            position_sensor.enable(1)
+            self.L_leg_motors.append(motor)
 
-        # self.R_leg_motors = []
-        # for joint in joints:
-        #     motor = self.getDevice(f'R{joint}')
-        #     position_sensor = motor.getPositionSensor()
-        #     position_sensor.enable(1)
-        #     self.R_leg_motors.append(motor)
+        self.R_leg_motors = []
+        for joint in joints:
+            motor = self.getDevice(f'R{joint}')
+            position_sensor = motor.getPositionSensor()
+            position_sensor.enable(1)
+            self.R_leg_motors.append(motor)
 
         self.botVisible = True
         self.area = 0
@@ -109,9 +103,9 @@ class Sultaan (Robot):
             t = self.getTime()
             self.gait_manager.update_theta()
             
-            if 0.3 < t < 2:
+            if 0.3 < t < 4:
                 self.start_sequence()
-            elif t > 2:
+            elif t > 4:
                 self.fall_detector.check()
                 self.walk()
                 
@@ -187,7 +181,7 @@ class Sultaan (Robot):
 
             points_below_threshold = sum(point[1] >= bottom_threshold for point in box)
             percentage_below_threshold = points_below_threshold / len(box)
-            if percentage_below_threshold >= 0.5 and cv2.contourArea(largest_contour) >= 180:
+            if percentage_below_threshold >= 0.5 and cv2.contourArea(largest_contour) >= 200:
                 return True
             
         return False
@@ -198,38 +192,23 @@ class Sultaan (Robot):
         desired_radius = abs(self.SMALLEST_TURNING_RADIUS / normalized_x) if abs(normalized_x) > 1e-3 else None
 
         if self.near_edge():
-            self.turn_counter += 1
-        else:
-            self.turn_counter = 0
-
-        if self.turn_counter > 10:
-            # print("near edge")
-            self.library.play('TurnLeft60')
+            self.gait_manager.update_radius_calibration(0)
+            self.gait_manager.command_to_motors(desired_radius=0, heading_angle=0)
             return
             
-        self.gait_manager.update_radius_calibration(0.93)    
-        
         if (self.botVisible == False):
-            # print("bot not visible")
-            self.library.play('kinchit')
             self.gait_manager.command_to_motors(desired_radius=0, heading_angle=0)
             return
 
-        # print(f"normalized x = {normalized_x}")
+        else:
+            self.gait_manager.update_radius_calibration(0.93)    
+
         self.library.play('Khushi2')
         angle = 0
         if abs(normalized_x) > 0.6:
-            angle = 3.14 / 5
-        
-        if desired_radius == None:
-            rad = None
-        else:
-            if normalized_x > 0:
-                rad = desired_radius
-            else:
-                rad = -desired_radius
-
-        self.gait_manager.command_to_motors(desired_radius=rad, heading_angle=angle)
+            angle = 3.14 / 5 
+            
+        self.gait_manager.command_to_motors(desired_radius=desired_radius, heading_angle=angle)
 
 
     def _get_normalized_opponent_x(self):
@@ -241,7 +220,19 @@ class Sultaan (Robot):
         model.to(device).eval()
         self.model_loaded = True
         
-        self.use_area = True
+        # Get reference image for triangulation
+        reference_image = cv2.cvtColor(self.camera.get_image(), cv2.COLOR_BGR2RGB)
+        boxes = model([reference_image]).xyxy[0]
+        
+        self.use_area = False
+
+        while (len(boxes) == 0):
+            print("still finding reference image")
+            boxes = model([reference_image]).xyxy[0]
+            if (self.getTime() > 5):
+                print("could not find image, quitting")
+                self.use_area = True
+                break
         
         if not self.use_area:
             x_size = boxes[0][2].item() - boxes[0][0].item()
