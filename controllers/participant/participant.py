@@ -213,6 +213,7 @@ class Sultaan (Robot):
             return
 
         # print(f"normalized x = {normalized_x}")
+        heading_angle = 0
         self.library.play('Khushi2')
         if(normalized_x > 0): 
             heading_angle = 3.14/4
